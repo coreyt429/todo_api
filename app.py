@@ -70,8 +70,8 @@ def post_tasks():
     task = request.json
     if not task:
         return jsonify({'message': 'No task provided'}), 400
-    # Create new task
     task['task_id'] = str(uuid.uuid4())
+    # Create new task
     db.insert(task)
     return jsonify({'message': 'Task created successfully', 'task_id': task['task_id']}), 201
 
