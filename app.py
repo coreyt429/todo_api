@@ -27,7 +27,7 @@ def get_tasks(task_id=None):
     if task_id:
         # Get a specific task
         Task = Query()
-        task = db.get(Task.taskId == task_id)
+        task = db.get(Task.task_id == task_id)
         if task:
             return jsonify(task)
         else:
