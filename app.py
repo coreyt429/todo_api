@@ -38,6 +38,7 @@ def get_tasks(task_id=None):
         return jsonify(tasks)
 
 @app.route('/tasks/search/<string:query>', methods=['GET'])
+@app.route('/tasks/search', methods=['GET'])
 @token_required
 def get_tasks_search(query=None):
     if query:
