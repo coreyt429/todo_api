@@ -37,6 +37,8 @@ def get_tasks(task_id=None):
         tasks = db.all()
         return jsonify(tasks)
 
+# consider combining GET, PUT, and DELETE into one handler on @app.route('/tasks/<string:task_id>', methods=['PUT', 'GET', 'DELETE'])
+# seperate with if request.method == 'GET':
 @app.route('/tasks/search/<string:query>', methods=['GET'])
 @app.route('/tasks/search/<string:field>/<string:query>', methods=['GET'])
 @app.route('/tasks/search', methods=['GET'])
@@ -73,6 +75,7 @@ def post_tasks():
     db.insert(task)
     return jsonify({'message': 'Task created successfully', 'task_id': task['task_id']}), 201
 
+# consider combining GET, PUT, and DELETE into one handler on @app.route('/tasks/<string:task_id>', methods=['PUT', 'GET', 'DELETE'])
 @app.route('/tasks/<string:task_id>', methods=['PUT'])
 @token_required
 def put_tasks(task_id):
@@ -90,10 +93,8 @@ def put_tasks(task_id):
     else:
         return jsonify({'message': 'Task not found'}), 404
 
-# moving to /tasks/task_id/ but testing with /tasks/ now since that is what is on the server
-# fix in tasks.py before removing the second route
-@app.route('/tasks/task_id/<string:task_id>', methods=['DELETE'])
-@app.route('/tasks/<string:task_id>', methods=['DELETE'])
+# consider combining GET, PUT, and DELETE into one handler on @app.route('/tasks/<string:task_id>', methods=['PUT', 'GET', 'DELETE'])
+@app.route('/tasks/delete/<string:task_id>', methods=['DELETE'])
 @token_required
 def delete_task(task_id):
     Task = Query()

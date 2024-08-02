@@ -42,10 +42,10 @@ class TaskList:
         return self.post(path="tasks", payload=task)
     
     def delete_task(self, **kwargs):
-        task_id = kwargs.get('task', None)
+        task_id = kwargs.get('task_id', None)
         if not task_id:
             return {"error": "no_task_id"}
-        return self.post(path=f"tasks/{task_id}")
+        return self.post(path=f"tasks/delete/{task_id}")
     
     def get(self, **kwargs):
         kwargs['method'] = 'GET'

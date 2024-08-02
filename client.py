@@ -57,6 +57,7 @@ print("delete task")
 my_tasks = client.fetch_all()
 for task in my_tasks:
     if task['Name'] == 'Dummy':
+        print(f"deleting {task['task_id']}")
         my_tasks = client.delete_task(task_id=task["task_id"])
         dump_tasks(my_tasks)
 
