@@ -26,9 +26,9 @@ def get_tasks():
     tasks = db.all()
     return jsonify(tasks)
 
-@app.route('/tasks', methods=['PUT', 'POST'])
+@app.route('/tasks', methods=['POST'])
 @token_required
-def put_tasks():
+def post_tasks():
     task = request.json
     if not task:
         return jsonify({'message': 'No task provided'}), 400
