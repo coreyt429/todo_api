@@ -38,18 +38,18 @@ def get_tasks(task_id=None):
         return jsonify(tasks)
 
 @app.route('/tasks/search/<string:query>', methods=['GET'])
+@app.route('/tasks/search/<string:field>/<string:query>', methods=['GET'])
 @app.route('/tasks/search', methods=['GET'])
 @token_required
-def get_tasks_search(query=None):
+def get_tasks_search(query=None, field=None):
     if query:
         # Get a specific task
         results = []
         Task = Query()
-        if ':' in query:
-            field, keyword = query.split(':')
+        if field:
             # how do I look for keyword in field?
             for item in db.all():
-                if keyword in item[field]:
+                if query in item[field]:
                     results.append(item)
         else:
             query = query.lower()
