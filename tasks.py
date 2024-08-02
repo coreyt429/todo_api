@@ -17,35 +17,42 @@ class TaskList:
             raise Exception("Configuration file 'cfg.json' not found.")
         except json.JSONDecodeError:
             raise Exception("Configuration file 'cfg.json' is not a valid JSON.")
-
+    def as_list(self, item):
+        if isinstance(item, dict) and "error" in item:
+            return item
+        if not isinstance(item, list):
+            return list(item)
+        return item
+    
     def fetch_all(self):
-        return self.get(path="tasks")
+        return self.as_list(self.get(path="tasks"))
     
     def search(self, **kwargs):
         query = kwargs.get('query', '-')
         if "field" in kwargs:
             field = kwargs['field']
             #                     /tasks/search/Name/2"
-            return self.get(path=f"tasks/search/{field}/{query}")
-        return self.get(path=f"tasks/search/{query}")
+            return self.as_list(self.get(path=f"tasks/search/{field}/{query}"))
+        return self.as_list(self.get(path=f"tasks/search/{query}"))
     
     def get_task(self, **kwargs):
         task_id = kwargs.get('task_id', None)
         if task_id:
-            return self.get(path=f"tasks/task_id/{task_id}")
+            return self.as_list(self.get(path=f"tasks/task_id/{task_id}"))
         return self.fetch_all()
     
     def add_task(self, **kwargs):
         task = kwargs.get('task', None)
         if not task:
             return {"error": "no_task"}
+        print(json.dumps(task,indent=4))
         return self.post(path="tasks", payload=task)
     
     def delete_task(self, **kwargs):
         task_id = kwargs.get('task_id', None)
         if not task_id:
             return {"error": "no_task_id"}
-        return self.post(path=f"tasks/delete/{task_id}")
+        return self.delete(path=f"tasks/delete/{task_id}")
     
     def get(self, **kwargs):
         kwargs['method'] = 'GET'
@@ -66,7 +73,7 @@ class TaskList:
     def request(self, **kwargs):
         method = kwargs.get('method', 'GET')
         url = f"{self.cfg['BASE_URL']}/{kwargs['path']}"
-        print(url)
+        print(f"{method} {url}")
         # Prepare the headers
         headers = {
             "Authorization": f"Bearer {self.cfg['AUTH_TOKEN']}",
