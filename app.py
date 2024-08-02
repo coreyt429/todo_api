@@ -90,6 +90,9 @@ def put_tasks(task_id):
     else:
         return jsonify({'message': 'Task not found'}), 404
 
+# moving to /tasks/task_id/ but testing with /tasks/ now since that is what is on the server
+# fix in tasks.py before removing the second route
+@app.route('/tasks/task_id/<string:task_id>', methods=['DELETE'])
 @app.route('/tasks/<string:task_id>', methods=['DELETE'])
 @token_required
 def delete_task(task_id):
