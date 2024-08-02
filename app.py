@@ -59,7 +59,7 @@ def get_tasks_search(query=None):
     else:
         # Get all tasks
         results = db.all()
-    return jsonify(tasks)
+    return jsonify(results)
 
 @app.route('/tasks', methods=['POST'])
 @token_required
