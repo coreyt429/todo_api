@@ -21,7 +21,7 @@ app = Flask(__name__)
 db = TinyDB('todo_list.json')
 
 @app.route('/tasks', methods=['GET'])
-@app.route('/tasks/<string:task_id>', methods=['GET'])
+@app.route('/tasks/task_id/<string:task_id>', methods=['GET'])
 @token_required
 def get_tasks(task_id=None):
     if task_id:
