@@ -26,32 +26,39 @@ def get_tasks():
     tasks = db.all()
     return jsonify(tasks)
 
-@app.route('/tasks', methods=['PUT'])
+@app.route('/tasks', methods=['PUT', 'POST'])
 @token_required
 def put_tasks():
     task = request.json
     if not task:
         return jsonify({'message': 'No task provided'}), 400
+    # Create new task
+    task['task_id'] = str(uuid.uuid4())
+    db.insert(task)
+    return jsonify({'message': 'Task created successfully', 'task_id': task['task_id']}), 201
 
-    if 'taskId' in task:
+@app.route('/tasks/<string:task_id>', methods=['PUT'])
+@token_required
+def put_tasks(task_id):
+    task = request.json
+    if not task:
+        return jsonify({'message': 'No task provided'}), 400
+
+    if not 'task_id' in task:
+        task['task_id'] = task_id
         # Update existing task
-        Task = Query()
-        result = db.update(task, Task.taskId == task['taskId'])
-        if result:
-            return jsonify({'message': 'Task updated successfully'}), 200
-        else:
-            return jsonify({'message': 'Task not found'}), 404
+    Task = Query()
+    result = db.update(task, Task.task_id == task['task_id'])
+    if result:
+        return jsonify({'message': 'Task updated successfully'}), 200
     else:
-        # Create new task
-        task['taskId'] = str(uuid.uuid4())
-        db.insert(task)
-        return jsonify({'message': 'Task created successfully', 'taskId': task['taskId']}), 201
+        return jsonify({'message': 'Task not found'}), 404
 
 @app.route('/tasks/<string:task_id>', methods=['DELETE'])
 @token_required
 def delete_task(task_id):
     Task = Query()
-    result = db.remove(Task.taskId == task_id)
+    result = db.remove(Task.task_id == task_id)
     if result:
         return jsonify({'message': 'Task deleted successfully'}), 200
     else:
