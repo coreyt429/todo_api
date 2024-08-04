@@ -35,15 +35,36 @@ def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.headers.get('Authorization')
-        if not token or token != f"Bearer {cfg['AUTH_TOKEN']}":
+        if not token or not token.startswith("Bearer "):
             return jsonify({'message': 'Invalid or missing token'}), 401
+        
+        api_key = token.split(" ")[1]
+        try:
+            decoded_key = base64.urlsafe_b64decode(api_key.encode()).decode()
+            user_id, shared_secret, key = decoded_key.split(":")
+        except Exception as e:
+            return jsonify({'message': 'Invalid token format'}), 401
+        
+        #if user_id not in user_credentials or \
+        #   user_credentials[user_id]['shared_secret'] != shared_secret or \
+        #   user_credentials[user_id]['key'] != key:
+        #    return jsonify({'message': 'Invalid token'}), 401
+        
+        # Store user_id and key in the global object
+        g.user_id = user_id
+        g.key = key
+        
         return f(*args, **kwargs)
     return decorated
 
 app = Flask(__name__)
-db = TinyDB('todo_list.json')
-# Use the encrypted storage
-#db = TinyDB('encrypted_todo_list.json', storage=EncryptedJSONStorage('encrypted_todo_list.json', key))
+
+
+#db = TinyDB('todo_list.json')
+def get_db():
+    file_name = f"encrypted_{g.user_id}.json"
+    # Use the encrypted storage
+    return TinyDB(file_name, storage=EncryptedJSONStorage(file_name, g.key))
 
 def generate_key():
     # Generate a new key using Fernet
@@ -71,6 +92,7 @@ def get_key():
 @app.route('/tasks/task_id/<string:task_id>', methods=['GET'])
 @token_required
 def get_tasks(task_id=None):
+    db = get_db()
     if task_id:
         # Get a specific task
         Task = Query()
@@ -91,6 +113,7 @@ def get_tasks(task_id=None):
 @app.route('/tasks/search', methods=['GET'])
 @token_required
 def get_tasks_search(query=None, field=None):
+    db = get_db()
     if query:
         # Get a specific task
         results = []
@@ -114,6 +137,7 @@ def get_tasks_search(query=None, field=None):
 @app.route('/tasks', methods=['POST'])
 @token_required
 def post_tasks():
+    db = get_db()
     task = request.json
     if not task:
         return jsonify({'message': 'No task provided'}), 400
@@ -126,6 +150,7 @@ def post_tasks():
 @app.route('/tasks/<string:task_id>', methods=['PUT'])
 @token_required
 def put_tasks(task_id):
+    db = get_db()
     task = request.json
     if not task:
         return jsonify({'message': 'No task provided'}), 400
@@ -144,6 +169,7 @@ def put_tasks(task_id):
 @app.route('/tasks/delete/<string:task_id>', methods=['DELETE'])
 @token_required
 def delete_task(task_id):
+    db = get_db()
     Task = Query()
     result = db.remove(Task.task_id == task_id)
     if result:
