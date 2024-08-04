@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, g
 
 from functools import wraps
 import uuid
-from tinydb import TinyDB
+from tinydb import TinyDB, Query
 from tinydb.storages import JSONStorage
 from cryptography.fernet import Fernet
 import json
