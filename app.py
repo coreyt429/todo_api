@@ -65,7 +65,7 @@ app = Flask(__name__)
 def get_db():
     file_name = f"encrypted_{g.user_id}.json"
     # Use the encrypted storage
-    return TinyDB(file_name, storage=EncryptedJSONStorage(file_name, g.key))
+    return TinyDB(file_name, storage=lambda p: EncryptedJSONStorage(p, g.key))
 
 def generate_key():
     # Generate a new key using Fernet
