@@ -130,6 +130,10 @@ while True:
         if command == 'delete':
             # FIXME: delete should check for children first
             delete_task_id = cli_tasks[index].get('task_id')
+            children = [task for task in all_tasks if task.get('parent', None) == delete_task_id]
+            if len(children) > 0:
+                print(f"Deletion would orphan {len(children)} tasks")
+                continue
             response = client.delete_task(task_id=delete_task_id)
             print(response)
             all_tasks = client.fetch_all()
