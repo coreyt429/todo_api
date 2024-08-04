@@ -1,8 +1,30 @@
 from flask import Flask, jsonify, request
-from tinydb import TinyDB, Query
-import json
 from functools import wraps
 import uuid
+from tinydb import TinyDB
+from tinydb.storages import JSONStorage
+from cryptography.fernet import Fernet
+import json
+
+class EncryptedJSONStorage(JSONStorage):
+    def __init__(self, path, key):
+        super().__init__(path)
+        self.fernet = Fernet(key)
+
+    def read(self):
+        with open(self.path, 'rb') as handle:
+            encrypted_data = handle.read()
+            if encrypted_data:
+                decrypted_data = self.fernet.decrypt(encrypted_data)
+                return json.loads(decrypted_data)
+            else:
+                return None
+
+    def write(self, data):
+        encrypted_data = self.fernet.encrypt(json.dumps(data).encode())
+        with open(self.path, 'wb') as handle:
+            handle.write(encrypted_data)
+
 
 # Load configuration
 with open('cfg.json') as file:
@@ -19,6 +41,30 @@ def token_required(f):
 
 app = Flask(__name__)
 db = TinyDB('todo_list.json')
+# Use the encrypted storage
+db = TinyDB('encrypted_todo_list.json', storage=EncryptedJSONStorage('encrypted_todo_list.json', key))
+
+def generate_key():
+    # Generate a new key using Fernet
+    key = Fernet.generate_key()
+    return key.decode()  # Convert the key from bytes to a string
+
+@app.route('/key', methods=['POST'])
+def get_key():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    shared_secret = data.get('shared_secret')
+    
+    if not user_id or not shared_secret:
+        return jsonify({"error": "Missing user_id or shared_secret"}), 400
+    
+    new_key = generate_key()
+    # Combine user_id, shared_secret, and new_key into a single string
+    combined_string = f"{user_id}:{shared_secret}:{new_key}"
+    # Encode the combined string in base64
+    api_key = base64.urlsafe_b64encode(combined_string.encode()).decode()
+    
+    return jsonify({"api_key": api_key})
 
 @app.route('/tasks', methods=['GET'])
 @app.route('/tasks/task_id/<string:task_id>', methods=['GET'])
