@@ -42,7 +42,7 @@ def token_required(f):
 app = Flask(__name__)
 db = TinyDB('todo_list.json')
 # Use the encrypted storage
-db = TinyDB('encrypted_todo_list.json', storage=EncryptedJSONStorage('encrypted_todo_list.json', key))
+#db = TinyDB('encrypted_todo_list.json', storage=EncryptedJSONStorage('encrypted_todo_list.json', key))
 
 def generate_key():
     # Generate a new key using Fernet
