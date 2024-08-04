@@ -10,6 +10,7 @@ import base64
 
 class EncryptedJSONStorage(JSONStorage):
     def __init__(self, path, key):
+        self.path = path
         super().__init__(path)
         self.fernet = Fernet(key)
 
