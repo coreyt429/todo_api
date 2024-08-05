@@ -6,7 +6,8 @@ import requests
 from copy import deepcopy
 from datetime import datetime, timezone, timedelta, time
 import pytz
-from tzlocal import get_localzone
+from zoneinfo import ZoneInfo
+from tzlocal import get_localzone_name
 
 
 
@@ -34,21 +35,13 @@ class Task:
                     
         return task
     
-    def get_gmt_iso_for_local_5pm(self, days=0):
-        # Get the local timezone object from the system
-        local_tz = get_localzone()
-
-        # Get the current date in the local timezone and add the specified number of days
-        local_now = datetime.now(local_tz) + timedelta(days=days)
-
-        # Create a datetime object for 5:00 PM today in the local timezone
-        local_5pm = local_tz.localize(datetime.combine(local_now.date(), time(17, 0, 0)))
-
-        # Convert the local 5:00 PM time to UTC
-        utc_5pm = local_5pm.astimezone(pytz.utc)
-
-        # Return the UTC datetime object in ISO 8601 format
-        return utc_5pm.isoformat()
+    def get_gmt_iso_for_local_5pm(self):
+        # Get the local timezone object
+        local_tz = ZoneInfo(get_localzone_name())
+        local_now = datetime.now(local_tz)
+        local_5pm = datetime.combine(local_now.date(), time(17, 0, 0)).replace(tzinfo=local_tz)
+        gmt_5pm = local_5pm.astimezone(ZoneInfo("GMT"))
+        return gmt_5pm.isoformat()
     
     def normalize_to_local_timezone(self, iso_timestamp):
         # Parse the ISO 8601 timestamp to a datetime object
@@ -56,12 +49,12 @@ class Task:
 
         # Ensure the datetime object is aware (i.e., it has timezone info)
         if utc_dt.tzinfo is None:
-            utc_dt = utc_dt.replace(tzinfo=pytz.utc)
+            utc_dt = utc_dt.replace(tzinfo=ZoneInfo("UTC"))
         else:
-            utc_dt = utc_dt.astimezone(pytz.utc)
+            utc_dt = utc_dt.astimezone(ZoneInfo("UTC"))
 
         # Get the local timezone object
-        local_tz = get_localzone()
+        local_tz = ZoneInfo(get_localzone_name())
 
         # Convert the UTC datetime to local timezone
         local_dt = utc_dt.astimezone(local_tz)
@@ -103,6 +96,7 @@ class TaskList:
             raise Exception("Configuration file 'cfg.json' not found.")
         except json.JSONDecodeError:
             raise Exception("Configuration file 'cfg.json' is not a valid JSON.")
+        self.tasks = self.fetch_all()
 
     def as_object_list(self, items):
         items_list = list(items)
@@ -153,6 +147,35 @@ class TaskList:
             return {"error": "no_task_id"}
         return self.delete(path=f"tasks/delete/{task_id}")
     
+    def task_by_id(self, task_id):
+        """
+        Grab a task from a list by id
+        """
+        for task in self.tasks:
+            if task.data['task_id'] == task_id:
+                return task
+        return None
+
+    def tasks_by_parent(self, parent=None):
+        if not parent:
+            current_tasks_list = [task for task in self.tasks if not task.data.get('parent', None)]
+        else:
+            current_tasks_list = [task for task in sorted(self.tasks) if task.data.get('parent', None) == parent]
+        return current_tasks_list
+
+    def task_by_name(self, task_name, parent=None):
+        """
+        Grab a task from a list by id
+        """
+        current_task_list = self.tasks_by_parent(parent)
+        for task in current_task_list:
+            if task.data['name'] == task_name:
+                return task
+        # not found, check children:
+        for task in current_task_list:
+            return self.task_by_name(task_name, task.data['task_id'])
+        return None
+
     def get(self, **kwargs):
         kwargs['method'] = 'GET'
         return self.request(**kwargs)
@@ -172,7 +195,7 @@ class TaskList:
     def request(self, **kwargs):
         method = kwargs.get('method', 'GET')
         url = f"{self.cfg['BASE_URL']}/{kwargs['path']}"
-        print(f"{method} {url}")
+        #print(f"{method} {url}")
         # Prepare the headers
         headers = {
             "Authorization": f"Bearer {self.cfg['AUTH_TOKEN']}",

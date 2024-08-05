@@ -94,6 +94,8 @@ def tree(tasks, parent_id=None):
         tree_dict[task.data['task_id']]['subtasks'] = tree(tasks, task.data['task_id'])
     return tree_dict
 
+
+##### These should probably move to client
 def task_by_id(tasks, task_id):
     """
     Grab a task from a list by id
@@ -122,6 +124,7 @@ def task_by_name(tasks, task_name, parent=None):
     for task in current_task_list:
         return task_by_name(tasks, task_name, task.data['task_id'])
     return None
+##### These should probably move to client
 
 def display_menu(tasks, parent=None):
     """
