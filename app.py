@@ -158,7 +158,7 @@ def apply_defaults_for_missing(task):
     defaults = {
         'parent': None,
         'status': 'not_started',
-        'time_stamps': {},
+        'timestamps': {},
         'type': 'task'
     }
     for key, value in defaults.items():
