@@ -48,6 +48,13 @@ class TaskList:
         print(json.dumps(task,indent=4))
         return self.post(path="tasks", payload=task)
     
+    def update_task(self, **kwargs):
+        task = kwargs.get('task', None)
+        if not task:
+            return {"error": "no_task"}
+        print(json.dumps(task,indent=4))
+        return self.put(path=f"tasks/{task['task_id']}", payload=task)
+    
     def delete_task(self, **kwargs):
         task_id = kwargs.get('task_id', None)
         if not task_id:

@@ -7,6 +7,10 @@ from tinydb.storages import JSONStorage
 from cryptography.fernet import Fernet
 import json
 import base64
+from datetime import datetime, timezone
+
+def get_current_iso_timestamp():
+    return datetime.now(timezone.utc).isoformat()
 
 class EncryptedJSONStorage(JSONStorage):
     def __init__(self, path, key):
@@ -46,7 +50,8 @@ def token_required(f):
             user_id, shared_secret, key = decoded_key.split(":")
         except Exception as e:
             return jsonify({'message': 'Invalid token format'}), 401
-        
+        # FIXME:  This does need to check user and shared secret against something
+        # external
         #if user_id not in user_credentials or \
         #   user_credentials[user_id]['shared_secret'] != shared_secret or \
         #   user_credentials[user_id]['key'] != key:
@@ -61,8 +66,8 @@ def token_required(f):
 
 app = Flask(__name__)
 
-
-#db = TinyDB('todo_list.json')
+# FIXME: move all task handling code into a module to simplify the code here to just api code
+# FIXME: move all actual db file handling to a storage layer under tasks
 def get_db():
     file_name = f"encrypted_{g.user_id}.json"
     # Use the encrypted storage
@@ -141,12 +146,25 @@ def get_tasks_search(query=None, field=None):
 def post_tasks():
     db = get_db()
     task = request.json
+    task = apply_defaults_for_missing(task)
     if not task:
         return jsonify({'message': 'No task provided'}), 400
     task['task_id'] = str(uuid.uuid4())
     # Create new task
     db.insert(task)
     return jsonify({'message': 'Task created successfully', 'task_id': task['task_id']}), 201
+
+def apply_defaults_for_missing(task):
+    defaults = {
+        'parent': None,
+        'status': 'not_started',
+        'time_stamps': {},
+        'type': 'task'
+    }
+    for key, value in defaults.items():
+        task[key] = task.get(key, value)
+    task['timestamps']['created'] = task['timestamps'].get('created', get_current_iso_timestamp())
+    return task
 
 # consider combining GET, PUT, and DELETE into one handler on @app.route('/tasks/<string:task_id>', methods=['PUT', 'GET', 'DELETE'])
 @app.route('/tasks/<string:task_id>', methods=['PUT'])

@@ -25,6 +25,33 @@ delete 0-99 - delete a task
 quit - quit
 """)
 
+pattern_field = re.compile(r'(\w+)\s*:\s*(.*)')
+
+def edit_task(task_id):
+    print(f"edit_task({task_id})")
+    while True:
+        task = task_by_id(all_tasks, task_id)
+        print(f"Edit task {task['name']}")
+        for key, value in task.items():
+            print(f"{key}: {value}")
+        print()
+        input_text = input("Enter (field:value, save, or abort): ")
+        if input_text.lower() in ["abort", "quit"]:
+                break
+        if input_text.lower() in ["save", "done"]:
+            return task
+        match = pattern_field.match(input_text)
+        if match:
+            key, value = match.groups()
+            try:
+                value = int(value)
+            except ValueError:
+                pass
+            task[key] = value  
+        else:
+            print(f"Invalid input: {input_text}")
+    return None
+
 def get_new_task(parent_id=None):
     task = {}
     if parent_id:
@@ -33,11 +60,10 @@ def get_new_task(parent_id=None):
         name = parent.get('name', None)
     else:
         name = 'Root'
-    print(f"Add Task to {name}:")
-    pattern_field = re.compile(r'(\w+)\s*:\s*(.*)')
+    print(f"Add Task to {name}: ")
     while True:
         print(yaml.dump(task))
-        input_text = input("Enter (field:value, save, or abort)")
+        input_text = input("Enter (field:value, save, or abort): ")
         if input_text.lower() in ["abort", "quit"]:
             break
         if input_text.lower() in ["save", "done"]:
@@ -103,7 +129,10 @@ while True:
     if 'quit'.startswith(command):
         break
     if command.isdigit():
-        cli_level = cli_tasks[int(command)].get('task_id')
+        try:
+            cli_level = cli_tasks[int(command)].get('task_id')
+        except IndexError:
+            print(f"Invalid task {command}")
     if command == 'up':
         if cli_level:
             cli_level = cli_task.get('parent', None)
@@ -125,17 +154,26 @@ while True:
     if match:
         command, index = match.groups()
         index = int(index)
+        try:
+            task_id = cli_tasks[index].get('task_id')
+        except IndexError:
+            print(f"Invalid task {index}")
+            continue
         if command == 'cd':
-            cli_level = cli_tasks[index].get('task_id')
+            cli_level = task_id
         if command == 'delete':
-            # FIXME: delete should check for children first
-            delete_task_id = cli_tasks[index].get('task_id')
-            children = [task for task in all_tasks if task.get('parent', None) == delete_task_id]
+            children = [task for task in all_tasks if task.get('parent', None) == task_id]
             if len(children) > 0:
                 print(f"Deletion would orphan {len(children)} tasks")
                 continue
-            response = client.delete_task(task_id=delete_task_id)
+            response = client.delete_task(task_id=task_id)
             print(response)
             all_tasks = client.fetch_all()
+        if command in ["mod", "modify", "edit"]:
+            new_task = edit_task(task_id)
+            if new_task:
+                response = client.update_task(task=new_task)
+                print(response)
+                all_tasks = client.fetch_all()
 
 print("Good Bye!")
