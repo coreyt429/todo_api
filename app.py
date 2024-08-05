@@ -172,6 +172,8 @@ def apply_defaults_for_missing(task):
 def put_tasks(task_id):
     db = get_db()
     task = request.json
+    task = apply_defaults_for_missing(task)
+    task['timestamps']['updated'] = get_current_iso_timestamp()
     if not task:
         return jsonify({'message': 'No task provided'}), 400
 
