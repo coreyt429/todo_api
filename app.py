@@ -215,7 +215,7 @@ def get_task_search(query=None, field=None):
         results = []
         if field:
             for item in db.all():
-                if query in item[field]:
+                if query in item[field].lower():
                     results.append(item)
         else:
             for item in db.all():
