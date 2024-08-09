@@ -105,7 +105,7 @@ def get_key():
     return jsonify({"api_key": api_key})
 
 ####################################################################################################
-#  /tasks
+#  /tasks - deprecated, once client API is fully updated, drop this section
 ####################################################################################################
 
 @app.route('/tasks', methods=['GET'])
@@ -270,7 +270,8 @@ def handle_task(task_id=None):
 
         # Set task_id in the JSON if not provided
         task.setdefault('task_id', task_id)
-
+        # FIXME: if status is completed, we should set timstamp.completed
+        # FIXME: we should .lower() field names before saving
         if request.method == 'POST':
             result = db.insert(task)
             if result:
@@ -349,7 +350,6 @@ def handle_template(template_id=None):
 
         # Set template_id in the JSON if not provided
         template.setdefault('template_id', template_id)
-
         if request.method == 'POST':
             result = db.insert(template)
             if result:

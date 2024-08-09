@@ -1,5 +1,21 @@
 """
 simple task management cli
+
+Todo List:
+    add template to CLI
+        should add a new template with parent at cli context
+        similar behavior to new task, get name and type at a minimum
+        but let user define other fields
+        type: daily, weekly (also collect day), monthly (also collect DoM), yearly (date)
+        parent: derived from CLI context or none
+    on startup:
+        pull templates
+        if a task should be created today:
+            check to see if it already has
+            if not, create it
+    cli updates:
+        add option to hide/unhide completed
+
 """
 
 import re
@@ -38,7 +54,7 @@ def edit_task(task_id):
             print(f"{key}: {value}")
         print()
         input_text = input("Enter (field:value, save, or abort): ")
-        if input_text.lower() in ["abort", "quit"]:
+        if input_text.lower() in ["abort", "quit", "q"]:
                 break
         if input_text.lower() in ["save", "done"]:
             return task
@@ -63,6 +79,9 @@ def get_new_task(parent_id=None):
     else:
         name = 'Root'
     print(f"Add Task to {name}: ")
+    input_text = input("Enter task name: ")
+    task['name'] = input_text
+
     while True:
         print(yaml.dump(task))
         input_text = input("Enter (field:value, save, or abort): ")

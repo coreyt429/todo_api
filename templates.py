@@ -1,5 +1,5 @@
 """
-Module for managing tasks on todo.coreyt.com
+Module for managing templates on todo.coreyt.com
 """
 import json
 import requests
@@ -9,30 +9,23 @@ import pytz
 from zoneinfo import ZoneInfo
 from tzlocal import get_localzone_name
 
-class Task:
+class Template:
     """
-    Class for Task
-    data is the main element which replaced the previous task=dict() handling
+    Class for Template
+    data is the main element which replaced the previous template=dict() handling
     The purpose of the class is to provide printing and sorting standards
     """
 
-    def __init__(self, task={}):
-        self.data = self.apply_defaults(deepcopy(task))
+    def __init__(self, template={}):
+        self.data = self.apply_defaults(deepcopy(template))
     
-    def apply_defaults(self, task):
+    def apply_defaults(self, template):
         defaults = {
-            'parent': None,
-            'status': 'not_started',
-            'timestamps': {},
-            'type': 'task'
+            'type': 'daily'
         }
         for key, value in defaults.items():
-            task[key] = task.get(key, value)
-        if 'created' not in task['timestamps']:
-            task['timestamps']['created'] = self.get_current_iso_timestamp()
-        if 'due' not in task['timestamps']:
-            task['timestamps']['due'] = self.get_gmt_iso_for_local_5pm()           
-        return task
+            template[key] = template.get(key, value)           
+        return template
     
     def get_gmt_iso_for_local_5pm(self):
         # Get the local timezone object
@@ -67,23 +60,11 @@ class Task:
     def updated(self, timestamp=None):
         if not timestamp:
             timestamp = self.get_current_iso_timestamp()
-        # convert old timestamps
-        if 'timestamps' not in self.data:
-            self.data['timestamps'] = {}
-        print(json.dumps(self.data))
-        for ts in ['due', 'created', 'updated']:
-            ts_old_name = f'ts_{ts}'
-            if ts_old_name in self.data:
-                self.data['timestamps'][ts] = self.data.pop(ts_old_name)
-        print(json.dumps(self.data))
-        self.data['timestamps']['updated'] = timestamp
+        self.data['ts_updated'] = timestamp
 
     def  __str__(self):
         t = self.data
-        ts = t.get('timestamps',{}).get('due', 'no due date')
-        # look for old style due date
-        if ts == 'no due date':
-            ts = t.get('ts_due', 'no due date')
+        ts = t.get('ts_due', 'no due date')
         if not ts == 'no due date':
             ts = self.normalize_to_local_timezone(ts)
         return f"{t['name']} [{t['status']}]: {ts}"
@@ -94,9 +75,9 @@ class Task:
     def __gt__(self, other):
         return self.data['name'] > other.data['name']
 
-class TaskList:
+class TemplateList:
     """
-    Class for TaskList
+    Class for TemplateList
     """
     def __init__(self):
         # Load configuration
@@ -107,83 +88,83 @@ class TaskList:
             raise Exception("Configuration file 'cfg.json' not found.")
         except json.JSONDecodeError:
             raise Exception("Configuration file 'cfg.json' is not a valid JSON.")
-        self.tasks = self.fetch_all()
+        self.templates = self.fetch_all()
 
     def as_object_list(self, items):
         items_list = list(items)
         new_items_list = []
         for idx, item in enumerate(items_list):
-            new_items_list.append(Task(item))
+            new_items_list.append(Template(item))
         return new_items_list
 
     def fetch_all(self):
-        return self.as_object_list(self.get(path="tasks"))
+        return self.as_object_list(self.get(path="templates"))
     
     def search(self, **kwargs):
         query = kwargs.get('query', '-')
         if "field" in kwargs:
             field = kwargs['field']
-            return self.as_object_list(self.get(path=f"task/search/{field}/{query}"))
-        return self.as_object_list(self.get(path=f"task/search/{query}"))
+            return self.as_object_list(self.get(path=f"template/search/{field}/{query}"))
+        return self.as_object_list(self.get(path=f"template/search/{query}"))
     
-    def get_task(self, **kwargs):
-        task_id = kwargs.get('task_id', None)
-        if task_id:
-            return self.as_object_list(self.get(path=f"task/{task_id}"))
+    def get_template(self, **kwargs):
+        template_id = kwargs.get('template_id', None)
+        if template_id:
+            return self.as_object_list(self.get(path=f"template/{template_id}"))
         return self.fetch_all()
     
-    def add_task(self, **kwargs):
-        task = kwargs.get('task', None)
-        if not task:
-            return {"error": "no_task"}
-        # make it a task object to set defaults
-        task = Task(task)
-        print(json.dumps(task.data,indent=4))
-        return self.post(path="tasks", payload=task.data)
+    def add_template(self, **kwargs):
+        template = kwargs.get('template', None)
+        if not template:
+            return {"error": "no_template"}
+        # make it a template object to set defaults
+        template = Template(template)
+        print(json.dumps(template.data,indent=4))
+        return self.post(path="templates", payload=template.data)
     
-    def update_task(self, **kwargs):
-        print(kwargs.get('task'))
-        task = kwargs.get('task', None)
-        if not task:
-            return {"error": "no_task"}
+    def update_template(self, **kwargs):
+        print(kwargs.get('template'))
+        template = kwargs.get('template', None)
+        if not template:
+            return {"error": "no_template"}
         # set updated timestamp
-        task.updated()
-        print(json.dumps(task.data,indent=4))
-        return self.put(path=f"task/{task.data['task_id']}", payload=task.data)
+        template.updated()
+        print(json.dumps(template.data,indent=4))
+        return self.put(path=f"template/{template.data['template_id']}", payload=template.data)
     
-    def delete_task(self, **kwargs):
-        task_id = kwargs.get('task_id', None)
-        if not task_id:
-            return {"error": "no_task_id"}
-        return self.delete(path=f"task/{task_id}")
+    def delete_template(self, **kwargs):
+        template_id = kwargs.get('template_id', None)
+        if not template_id:
+            return {"error": "no_template_id"}
+        return self.delete(path=f"template/{template_id}")
     
-    def task_by_id(self, task_id):
+    def template_by_id(self, template_id):
         """
-        Grab a task from a list by id
+        Grab a template from a list by id
         """
-        for task in self.tasks:
-            if task.data['task_id'] == task_id:
-                return task
+        for template in self.templates:
+            if template.data['template_id'] == template_id:
+                return template
         return None
 
-    def tasks_by_parent(self, parent=None):
+    def templates_by_parent(self, parent=None):
         if not parent:
-            current_tasks_list = [task for task in self.tasks if not task.data.get('parent', None)]
+            current_templates_list = [template for template in self.templates if not template.data.get('parent', None)]
         else:
-            current_tasks_list = [task for task in sorted(self.tasks) if task.data.get('parent', None) == parent]
-        return current_tasks_list
+            current_templates_list = [template for template in sorted(self.templates) if template.data.get('parent', None) == parent]
+        return current_templates_list
 
-    def task_by_name(self, task_name, parent=None):
+    def template_by_name(self, template_name, parent=None):
         """
-        Grab a task from a list by id
+        Grab a template from a list by id
         """
-        current_task_list = self.tasks_by_parent(parent)
-        for task in current_task_list:
-            if task.data['name'] == task_name:
-                return task
+        current_template_list = self.templates_by_parent(parent)
+        for template in current_template_list:
+            if template.data['name'] == template_name:
+                return template
         # not found, check children:
-        for task in current_task_list:
-            return self.task_by_name(task_name, task.data['task_id'])
+        for template in current_template_list:
+            return self.template_by_name(template_name, template.data['template_id'])
         return None
 
     def get(self, **kwargs):
@@ -234,6 +215,6 @@ class TaskList:
 
 # Example usage:
 if __name__ == "__main__":
-    task_list = TaskList()
-    tasks = task_list.fetch_all()
-    print(tasks)
+    template_list = TemplateList()
+    templates = template_list.fetch_all()
+    print(templates)
