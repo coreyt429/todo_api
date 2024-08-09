@@ -204,6 +204,29 @@ def delete_task(task_id):
 ####################################################################################################
 #  /task
 ####################################################################################################
+@app.route('/task/search/<string:query>', methods=['GET'])
+@app.route('/task/search/<string:field>/<string:query>', methods=['GET'])
+@app.route('/task/search', methods=['GET'])
+@token_required
+def get_task_search(query=None, field=None):
+    db = get_db()
+    if query:
+        results = []
+        if field:
+            for item in db.all():
+                if query in item[field]:
+                    results.append(item)
+        else:
+            query = query.lower()
+            for item in db.all():
+                if any(query in str(key).lower() or query in str(value).lower()
+                    for key, value in item.items()):
+                    results.append(item)
+    else:
+        # Get all tasks
+        results = db.all()
+    return jsonify(results)
+
 def apply_task_defaults(task):
     # Ensure the task is a dictionary
     if not isinstance(task, dict):
