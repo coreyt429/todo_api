@@ -60,11 +60,23 @@ class Template:
     def updated(self, timestamp=None):
         if not timestamp:
             timestamp = self.get_current_iso_timestamp()
-        self.data['ts_updated'] = timestamp
+        # convert old timestamps
+        if 'timestamps' not in self.data:
+            self.data['timestamps'] = {}
+        print(json.dumps(self.data))
+        for ts in ['due', 'created', 'updated']:
+            ts_old_name = f'ts_{ts}'
+            if ts_old_name in self.data:
+                self.data['timestamps'][ts] = self.data.pop(ts_old_name)
+        print(json.dumps(self.data))
+        self.data['timestamps']['updated'] = timestamp
 
     def  __str__(self):
         t = self.data
-        ts = t.get('ts_due', 'no due date')
+        ts = t.get('timestamps',{}).get('due', 'no due date')
+        # look for old style due date
+        if ts == 'no due date':
+            ts = t.get('ts_due', 'no due date')
         if not ts == 'no due date':
             ts = self.normalize_to_local_timezone(ts)
         return f"{t['name']} [{t['status']}]: {ts}"
