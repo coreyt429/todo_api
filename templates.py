@@ -8,6 +8,7 @@ from datetime import datetime, timezone, timedelta, time
 import pytz
 from zoneinfo import ZoneInfo
 from tzlocal import get_localzone_name
+from cfg import Cfg
 
 class Template:
     """
@@ -93,13 +94,7 @@ class TemplateList:
     """
     def __init__(self):
         # Load configuration
-        try:
-            with open('cfg.json') as file:
-                self.cfg = json.load(file)
-        except FileNotFoundError:
-            raise Exception("Configuration file 'cfg.json' not found.")
-        except json.JSONDecodeError:
-            raise Exception("Configuration file 'cfg.json' is not a valid JSON.")
+        self.cfg = Cfg()
         self.templates = self.fetch_all()
 
     def as_object_list(self, items):
@@ -110,7 +105,7 @@ class TemplateList:
         return new_items_list
 
     def fetch_all(self):
-        return self.as_object_list(self.get(path="templates"))
+        return self.as_object_list(self.get(path="template"))
     
     def search(self, **kwargs):
         query = kwargs.get('query', '-')
@@ -132,7 +127,7 @@ class TemplateList:
         # make it a template object to set defaults
         template = Template(template)
         print(json.dumps(template.data,indent=4))
-        return self.post(path="templates", payload=template.data)
+        return self.post(path="template", payload=template.data)
     
     def update_template(self, **kwargs):
         print(kwargs.get('template'))
@@ -197,11 +192,11 @@ class TemplateList:
 
     def request(self, **kwargs):
         method = kwargs.get('method', 'GET')
-        url = f"{self.cfg['BASE_URL']}/{kwargs['path']}"
+        url = f"{self.cfg.get('BASE_URL')}/{kwargs['path']}"
         #print(f"{method} {url}")
         # Prepare the headers
         headers = {
-            "Authorization": f"Bearer {self.cfg['AUTH_TOKEN']}",
+            "Authorization": f"Bearer {self.cfg.get('AUTH_TOKEN')}",
             "Content-Type": "application/json"
         }
         payload = kwargs.get('payload', {})

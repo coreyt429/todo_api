@@ -8,13 +8,21 @@ Todo List:
         but let user define other fields
         type: daily, weekly (also collect day), monthly (also collect DoM), yearly (date)
         parent: derived from CLI context or none
+        should templates only be for categories? or just for Today?
+        pointer templates
+        rule based
     on startup:
         pull templates
         if a task should be created today:
             check to see if it already has
             if not, create it
-    cli updates:
-        add option to hide/unhide completed
+    Notes on Categories:
+        Today    - virtual category with tasks built from templates due today and pointers to project tasks
+        Week     - same for this week
+        Month    - same for this month
+        Quarter  - same for this quarter
+        Tasks    - one off tasks not associated with a project   
+        Projects - structured projects
 
 """
 
@@ -24,8 +32,12 @@ import json
 import argparse
 import sys
 from tasks import TaskList
+from templates import TemplateList  # debate point, should the client code handle templates directly or via tasks?
+from cfg import Cfg
 
 client = TaskList()
+template_client = TemplateList()
+cfg = Cfg()
 
 def display_help():
     """
@@ -39,7 +51,8 @@ cd 0-99 - go to level
 up - go up a level
 add - add task at this level
 modify 0-99 - modify a task
-delete 0-99 - delete a task 
+delete 0-99 - delete a task
+config - configure app
 quit - quit
 """)
 
@@ -66,6 +79,25 @@ def edit_task(task_id):
             except ValueError:
                 pass
             task.data[key] = value  
+        else:
+            print(f"Invalid input: {input_text}")
+    return None
+
+def edit_config():
+    while True:
+        print(f"Edit Config:")
+        for key, value in cfg.items():
+            print(f"    {key}: {value}")
+        print()
+        input_text = input("Enter (field:value or quit): ")
+        input_text = input_text.rstrip().lstrip()
+        print(f"you entered [{input_text}]")
+        if input_text.lower() in ["abort", "quit", "q"]:
+                break
+        match = pattern_field.match(input_text)
+        if match:
+            key, value = match.groups()
+            cfg.set(key, value)
         else:
             print(f"Invalid input: {input_text}")
     return None
@@ -129,6 +161,18 @@ def tasks_by_parent(tasks, parent=None):
         current_tasks_list = [task for task in tasks if not task.data.get('parent', None)]
     else:
         current_tasks_list = [task for task in sorted(tasks) if task.data.get('parent', None) == parent]
+    print(f"show_completed? {cfg.get('show_completed')}")
+    if not cfg.get('show_completed', True):
+        print("trimming completed")
+        completed = []
+        for task in current_tasks_list:
+            print(f"{task.data['status']}")
+            # FIXME: we should probably have a status method on task instead
+            if task.data['status'] == 'completed':
+                print(f"trimming: {task}")
+                completed.append(task)
+        for task in completed:
+            current_tasks_list.pop(current_tasks_list.index(task))
     return current_tasks_list
 
 def task_by_name(tasks, task_name, parent=None):
@@ -215,6 +259,8 @@ while True:
     if command in ['help', 'h', '?']:
         display_help()
         continue
+    if command in ['cfg', 'config', 'conf']:
+        edit_config()
     if command in ['add', 'new', 'a', 'n']:
         new_task = get_new_task(cli_level)
         if new_task:
