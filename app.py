@@ -211,13 +211,13 @@ def delete_task(task_id):
 def get_task_search(query=None, field=None):
     db = get_db()
     if query:
+        query = query.lower()
         results = []
         if field:
             for item in db.all():
                 if query in item[field]:
                     results.append(item)
         else:
-            query = query.lower()
             for item in db.all():
                 if any(query in str(key).lower() or query in str(value).lower()
                     for key, value in item.items()):
