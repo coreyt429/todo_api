@@ -68,8 +68,13 @@ app = Flask(__name__)
 
 # FIXME: move all task handling code into a module to simplify the code here to just api code
 # FIXME: move all actual db file handling to a storage layer under tasks
-def get_db():
+def get_db(**kwargs):
+    # default tasks db
     file_name = f"encrypted_{g.user_id}.json"
+    # templates db
+    if kwargs.get('db', None) == 'template':
+        file_name = f"encrypted_{g.user_id}_templates.json"
+    
     # Use the encrypted storage
     return TinyDB(file_name, storage=lambda p: EncryptedJSONStorage(p, g.key))
 
@@ -77,6 +82,10 @@ def generate_key():
     # Generate a new key using Fernet
     key = Fernet.generate_key()
     return key.decode()  # Convert the key from bytes to a string
+
+####################################################################################################
+#  Key management
+####################################################################################################
 
 @app.route('/key', methods=['POST'])
 def get_key():
@@ -94,6 +103,10 @@ def get_key():
     api_key = base64.urlsafe_b64encode(combined_string.encode()).decode()
     
     return jsonify({"api_key": api_key})
+
+####################################################################################################
+#  /tasks
+####################################################################################################
 
 @app.route('/tasks', methods=['GET'])
 @app.route('/tasks/task_id/<string:task_id>', methods=['GET'])
@@ -146,7 +159,7 @@ def get_tasks_search(query=None, field=None):
 def post_tasks():
     db = get_db()
     task = request.json
-    task = apply_defaults_for_missing(task)
+    task = apply_task_defaults(task)
     if not task:
         return jsonify({'message': 'No task provided'}), 400
     task['task_id'] = str(uuid.uuid4())
@@ -154,25 +167,14 @@ def post_tasks():
     db.insert(task)
     return jsonify({'message': 'Task created successfully', 'task_id': task['task_id']}), 201
 
-def apply_defaults_for_missing(task):
-    defaults = {
-        'parent': None,
-        'status': 'not_started',
-        'timestamps': {},
-        'type': 'task'
-    }
-    for key, value in defaults.items():
-        task[key] = task.get(key, value)
-    task['timestamps']['created'] = task['timestamps'].get('created', get_current_iso_timestamp())
-    return task
-
 # consider combining GET, PUT, and DELETE into one handler on @app.route('/tasks/<string:task_id>', methods=['PUT', 'GET', 'DELETE'])
 @app.route('/tasks/<string:task_id>', methods=['PUT'])
 @token_required
 def put_tasks(task_id):
     db = get_db()
     task = request.json
-    task = apply_defaults_for_missing(task)
+    task = apply_task_defaults(task)
+    # FIXME:  default fields and timestamps should probably be handled in client code
     task['timestamps']['updated'] = get_current_iso_timestamp()
     if not task:
         return jsonify({'message': 'No task provided'}), 400
@@ -198,6 +200,166 @@ def delete_task(task_id):
         return jsonify({'message': 'Task deleted successfully'}), 200
     else:
         return jsonify({'message': 'Task not found'}), 404
+
+####################################################################################################
+#  /task
+####################################################################################################
+def apply_task_defaults(task):
+    # Ensure the task is a dictionary
+    if not isinstance(task, dict):
+        raise ValueError("Expected task to be a dictionary")
+
+    # Set top-level defaults
+    defaults = {
+        'parent': None,
+        'status': 'not_started',
+        'timestamps': {},
+        'type': 'task'
+    }
+
+    for key, value in defaults.items():
+        task.setdefault(key, value)
+    
+    # Ensure timestamps is a dictionary
+    if not isinstance(task['timestamps'], dict):
+        task['timestamps'] = {}
+
+    # Set defaults within the timestamps dictionary
+    task['timestamps'].setdefault('created', get_current_iso_timestamp())
+
+    return task
+
+
+@app.route('/task', methods=['GET', 'POST'])
+@app.route('/task/<string:task_id>', methods=['GET', 'PUT', 'POST', 'DELETE'])
+@token_required
+def handle_task(task_id=None):
+    db = get_db(db='task')
+    query = Query()
+
+    # Handle POST and PUT requests (add and update)
+    if request.method in ['POST', 'PUT']:
+        task = apply_task_defaults(request.json)
+
+        # Generate a new task_id if not provided in the path
+        if not task_id:
+            task_id = str(uuid.uuid4())
+
+        # Set task_id in the JSON if not provided
+        task.setdefault('task_id', task_id)
+
+        if request.method == 'POST':
+            result = db.insert(task)
+            if result:
+                return jsonify({
+                    'message': 'task created successfully',
+                    'task_id': task['task_id']
+                }), 201
+            return jsonify({'message': 'Failed to create task'}), 503
+        
+        # Update the task if method is PUT
+        result = db.update(task, query.task_id == task['task_id'])
+        if result:
+            return jsonify({'message': 'task updated successfully'}), 200
+        return jsonify({'message': 'task not found'}), 404
+
+    # Handle DELETE request
+    if request.method == 'DELETE':
+        result = db.remove(query.task_id == task_id)
+        if result:
+            return jsonify({'message': 'task deleted successfully'}), 200
+        return jsonify({'message': 'task not found'}), 404
+
+    # Handle GET requests
+    if task_id:
+        # Get a specific task
+        task = db.get(query.task_id == task_id)
+        if task:
+            return jsonify(task)
+        return jsonify({'message': 'task not found'}), 404
+
+    # Get all tasks if no task_id is provided
+    tasks = db.all()
+    return jsonify(tasks)
+
+####################################################################################################
+#  /template
+####################################################################################################
+def apply_template_defaults(template):
+    # Ensure the template is a dictionary
+    if not isinstance(template, dict):
+        raise ValueError("Expected template to be a dictionary")
+
+    # Set top-level defaults
+    defaults = {
+        'type': 'daily',
+        'timestamps': {}
+    }
+    
+    for key, value in defaults.items():
+        template.setdefault(key, value)
+    
+    # Ensure timestamps is a dictionary
+    if not isinstance(template['timestamps'], dict):
+        template['timestamps'] = {}
+
+    # Set defaults within the timestamps dictionary
+    template['timestamps'].setdefault('created', get_current_iso_timestamp())
+
+    return template
+
+
+@app.route('/template', methods=['GET', 'POST'])
+@app.route('/template/<string:template_id>', methods=['GET', 'PUT', 'POST', 'DELETE'])
+@token_required
+def handle_template(template_id=None):
+    db = get_db(db='template')
+    query = Query()
+
+    # Handle POST and PUT requests (add and update)
+    if request.method in ['POST', 'PUT']:
+        template = apply_template_defaults(request.json)
+
+        # Generate a new template_id if not provided in the path
+        if not template_id:
+            template_id = str(uuid.uuid4())
+
+        # Set template_id in the JSON if not provided
+        template.setdefault('template_id', template_id)
+
+        if request.method == 'POST':
+            result = db.insert(template)
+            if result:
+                return jsonify({
+                    'message': 'Template created successfully',
+                    'template_id': template['template_id']
+                }), 201
+            return jsonify({'message': 'Failed to create template'}), 503
+        
+        # Update the template if method is PUT
+        result = db.update(template, query.template_id == template['template_id'])
+        if result:
+            return jsonify({'message': 'Template updated successfully'}), 200
+        return jsonify({'message': 'Template not found'}), 404
+
+    # Handle DELETE request
+    if request.method == 'DELETE':
+        result = db.remove(query.template_id == template_id)
+        if result:
+            return jsonify({'message': 'Template deleted successfully'}), 200
+        return jsonify({'message': 'Template not found'}), 404
+
+    # Handle GET requests
+    if template_id:
+        # Get a specific template
+        template = db.get(query.template_id == template_id)
+        if template:
+            return jsonify(template)
+        return jsonify({'message': 'Template not found'}), 404
+
+    # Get all templates if no template_id is provided
+    templates = db.all()
+    return jsonify(templates)
 
 if __name__ == '__main__':
     app.run(debug=True)
