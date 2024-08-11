@@ -163,24 +163,6 @@ def tree(tasks, parent_id=None):
         tree_dict[task.data['task_id']]['subtasks'] = tree(tasks, task.data['task_id'])
     return tree_dict
 
-def today_menu():
-    print("today_menu not implemented")
-
-def this_week_menu():
-    print("this_week_menu not implemented")
-
-def this_month_menu():
-    print("this_month_menu not implemented")
-
-def this_quarter_menu():
-    print("this_quarter_menu not implemented")
-
-def projects_menu():
-    print("projects_menu not implemented")
-
-def tasks_menu():
-    print("tasks_menu not implemented")
-
 def display_menu(tasks, parent=None):
     """
     show menu
@@ -201,7 +183,9 @@ def display_menu(tasks, parent=None):
     return current_tasks_list
 
 def goto_cli_context(parent, input_val):
+    print(f"goto_cli_context({parent}, {input_val})")
     child_list = client.tasks_by_parent(parent)
+    print(f"child_list: {child_list}")
     # Is this a string we can turn into a number?
     if input_val.isdigit():
         try:
@@ -212,12 +196,12 @@ def goto_cli_context(parent, input_val):
     if not isinstance(input_val, int) or input_val >=len(child_list):
         print(f"Invalid task {input_val}")
         return None
+    print(f"input_val: {input_val}")
+    print(f"returning: {child_list[input_val]}")
     return child_list[input_val]
     
 def process_command(parent, input_text):
-    print(f"process_command({parent}, {input_text})")
     cli_task = client.task_by_id(parent)
-    print(f"cli_task: {cli_task}")
     cli_tasks = client.tasks_by_parent(cli_task)
     if input_text.isdigit():
         return goto_cli_context(parent, input_text)
@@ -225,7 +209,7 @@ def process_command(parent, input_text):
         return 'exit'
     if input_text in ['up', 'cd']:
         if cli_task:
-            return cli_task.data.get('parent', None)
+            return cli_task.parent
         return None
     if input_text in ['help', 'h', '?']:
         display_help()
@@ -250,10 +234,11 @@ def process_command(parent, input_text):
         print(cli_tasks[index])
         task_id = cli_tasks[index].data.get('task_id')
     except IndexError:
-        print(f"Invalid task {index}")
+        print(cli_tasks)
+        print(f"IndexError: Invalid task {index}")
         return parent
     except AttributeError:
-        print(f"Invalid task {index}")
+        print(f"AttributeError: Invalid task {index}")
         return parent
     if command in ['cd', 'go']:
         return goto_cli_context(parent, index)
@@ -289,14 +274,6 @@ if __name__ == "__main__":
 
     # Parse arguments
     args = parser.parse_args()
-    category_handlers = {
-            'Today': today_menu,
-            'This Week': this_week_menu,
-            'This Month': this_month_menu,
-            'This Quarter': this_quarter_menu,
-            'Tasks': tasks_menu,
-            'Projects': projects_menu,
-        }
     pattern_two_part = re.compile(r'(\w+)\s+(\d+)')
 
     all_tasks = client.fetch_all()
@@ -321,10 +298,21 @@ if __name__ == "__main__":
         sys.exit()
 
     while True:
+        try:
+            cli_level = cli_task.task_id
+        except NameError:
+            cli_task = client.task_by_id(cli_level)
+        except AttributeError:
+            cli_task = client.task_by_id(cli_level)
         cli_tasks = display_menu(all_tasks, cli_level)
         cli_task = client.task_by_id(cli_level)
         command = input("Enter command: ")
-        cli_level = process_command(cli_level, command)
-        if cli_level == 'exit':
+        cli_task = process_command(cli_level, command)
+        try:
+            cli_level = cli_task.task_id
+        except AttributeError:
+            cli_level = cli_task
+
+        if cli_task == 'exit':
             break
     print("Good Bye!")

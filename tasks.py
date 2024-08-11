@@ -226,6 +226,13 @@ class TaskList:
         #
         if not parent:
             return self.categories
+        # check for psuedo task for category, and normalize
+        try:
+            if parent.task_id in self.categories:
+                parent = parent.task_id
+           
+        except Exception:
+            pass
         if parent in self.categories:
             #{'name': 'Today', 'parent': None, 'status': 'in_progress', 'task_id': 'be444b84-47ed-42dd-9d87-c6e16b1e7f01', 'timestamps': {'created': '2024-08-05T14:08:28.779291+00:00', 'due': '2024-08-05T22:00:00+00:00', 'updated': '2024-08-09T06:46:22.891011+00:00'}, 'ts_created': '2024-08-05T14:08:28.779291+00:00', 'ts_due': '2024-08-05T22:00:00+00:00', 'ts_updated': '2024-08-05T14:51:37.561561+00:00', 'type': 'task'}
             if parent == 'Today':
