@@ -15,14 +15,35 @@ class Template:
     Class for Template
     data is the main element which replaced the previous template=dict() handling
     The purpose of the class is to provide printing and sorting standards
+
+    type:
+        daily: daily reoccuring tasks, like morning routine items
+        monthly: monthly reoccuring tasks
+    class: 
+        task: default class, creates a task based on the template in the parent task 
+            identified in the template
+        virtual: creates a task pointer for today, this week, or this month to link a task 
+            to those lists
+            
+
     """
 
     def __init__(self, template={}):
+        self.type = None
+        self.name = None
+        self.days = None
         self.data = self.apply_defaults(deepcopy(template))
+        self.refresh()
+    
+    def refresh(self):
+        self.type = self.data['type']
+        self.name = self.data['name']
+        self.days = self.data['days']
     
     def apply_defaults(self, template):
         defaults = {
-            'type': 'daily'
+            'type': 'daily',
+            'days': list(range(7))
         }
         for key, value in defaults.items():
             template[key] = template.get(key, value)           
@@ -71,6 +92,7 @@ class Template:
                 self.data['timestamps'][ts] = self.data.pop(ts_old_name)
         print(json.dumps(self.data))
         self.data['timestamps']['updated'] = timestamp
+        self.refresh()
 
     def  __str__(self):
         t = self.data
@@ -80,7 +102,7 @@ class Template:
             ts = t.get('ts_due', 'no due date')
         if not ts == 'no due date':
             ts = self.normalize_to_local_timezone(ts)
-        return f"{t['name']} [{t['status']}]: {ts}"
+        return f"{self.name} [{self.type}]: {ts}"
     
     def __lt__(self, other):
         return self.data['name'] < other.data['name']
@@ -105,7 +127,8 @@ class TemplateList:
         return new_items_list
 
     def fetch_all(self):
-        return self.as_object_list(self.get(path="template"))
+        self.templates = self.as_object_list(self.get(path="template"))
+        return self.templates
     
     def search(self, **kwargs):
         query = kwargs.get('query', '-')

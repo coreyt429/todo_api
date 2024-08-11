@@ -17,10 +17,10 @@ Todo List:
             check to see if it already has
             if not, create it
     Notes on Categories:
-        Today    - virtual category with tasks built from templates due today and pointers to project tasks
-        Week     - same for this week
-        Month    - same for this month
-        Quarter  - same for this quarter
+        Today    - tasks of any type that have a due date today
+        Week     - tasks of any type that have a due date this week
+        Month    - tasks of any type that have a due date this month
+        Quarter  - tasks of any type that have a due date this quarter
         Tasks    - one off tasks not associated with a project   
         Projects - structured projects
 
@@ -56,12 +56,24 @@ config - configure app
 quit - quit
 """)
 
-pattern_field = re.compile(r'(\w+)\s*:\s*(.*)')
+def set_task_key(task, key, value):
+    # Split the key by periods
+    keys = key.split('.')
+    d = task.data
+    current_dict = d
+    # Iterate through the keys except the last one to create or traverse nested dictionaries
+    for k in keys[:-1]:
+        if k not in current_dict:
+            current_dict[k] = {}
+        current_dict = current_dict[k]
+
+    # Set the final key to the value
+    current_dict[keys[-1]] = value
 
 def edit_task(task_id):
     print(f"edit_task({task_id})")
     while True:
-        task = task_by_id(all_tasks, task_id)
+        task = client.task_by_id(task_id)
         print(f"Edit task {task}")
         for key, value in task.data.items():
             print(f"{key}: {value}")
@@ -78,7 +90,8 @@ def edit_task(task_id):
                 value = int(value)
             except ValueError:
                 pass
-            task.data[key] = value  
+            # user set_task_key to handle nested keys like timestamps.due
+            set_task_key(task, key, value)
         else:
             print(f"Invalid input: {input_text}")
     return None
@@ -105,9 +118,14 @@ def edit_config():
 def get_new_task(parent_id=None):
     task = {}
     if parent_id:
-        task["parent"] = parent_id
-        parent = task_by_id(all_tasks, parent_id)
-        name = parent.data.get('name', None)
+        try:
+            print(f"parent: {parent_id}")
+            task["parent"] = parent_id
+            parent = client.task_by_id(parent_id)
+            name = parent.data.get('name', None)
+        except AttributeError:
+            task.pop('parent')
+            name = 'Root'
     else:
         name = 'Root'
     print(f"Add Task to {name}: ")
@@ -145,156 +163,168 @@ def tree(tasks, parent_id=None):
         tree_dict[task.data['task_id']]['subtasks'] = tree(tasks, task.data['task_id'])
     return tree_dict
 
+def today_menu():
+    print("today_menu not implemented")
 
-##### These should probably move to client
-def task_by_id(tasks, task_id):
-    """
-    Grab a task from a list by id
-    """
-    for task in tasks:
-        if task.data['task_id'] == task_id:
-            return task
-    return None
+def this_week_menu():
+    print("this_week_menu not implemented")
 
-def tasks_by_parent(tasks, parent=None):
-    if not parent:
-        current_tasks_list = [task for task in tasks if not task.data.get('parent', None)]
-    else:
-        current_tasks_list = [task for task in sorted(tasks) if task.data.get('parent', None) == parent]
-    print(f"show_completed? {cfg.get('show_completed')}")
-    if not cfg.get('show_completed', True):
-        print("trimming completed")
-        completed = []
-        for task in current_tasks_list:
-            print(f"{task.data['status']}")
-            # FIXME: we should probably have a status method on task instead
-            if task.data['status'] == 'completed':
-                print(f"trimming: {task}")
-                completed.append(task)
-        for task in completed:
-            current_tasks_list.pop(current_tasks_list.index(task))
-    return current_tasks_list
+def this_month_menu():
+    print("this_month_menu not implemented")
 
-def task_by_name(tasks, task_name, parent=None):
-    """
-    Grab a task from a list by id
-    """
-    current_task_list = tasks_by_parent(tasks, parent)
-    for task in current_task_list:
-        if task.data['name'] == task_name:
-            return task
-    # not found, check children:
-    for task in current_task_list:
-        return task_by_name(tasks, task_name, task.data['task_id'])
-    return None
-##### These should probably move to client
+def this_quarter_menu():
+    print("this_quarter_menu not implemented")
+
+def projects_menu():
+    print("projects_menu not implemented")
+
+def tasks_menu():
+    print("tasks_menu not implemented")
 
 def display_menu(tasks, parent=None):
     """
     show menu
     """
-    print()
-    parent_task = task_by_id(tasks, parent)
-    current_tasks_list = tasks_by_parent(tasks, parent)
+    print()    
+    parent_task = client.task_by_id(parent)
     if not parent:
         print("Categories:")
+    elif parent in client.categories:
+        print(f"Tasks for {parent}")
     else:
         print(f"SubTasks of {parent_task}")
+    current_tasks_list = client.tasks_by_parent(parent)
     for idx, task in enumerate(current_tasks_list):
         print(f"{idx:3}: {task}")
     print()
+    
     return current_tasks_list
 
-
-parser = argparse.ArgumentParser(description="A CLI for managing tasks.")
-
-# Add arguments
-parser.add_argument('-p', '--parent', type=str, help='Set the target parent.')
-parser.add_argument('-j', '--json', type=str, help='Set json.')
-parser.add_argument('-a', '--add', action='store_true', help='Set add to True.')
-parser.add_argument('-d', '--display', action='store_true', help='Just print the parent')
-
-# Parse arguments
-args = parser.parse_args()
-
-pattern_two_part = re.compile(r'(\w+)\s+(\d+)')
-
-all_tasks = client.fetch_all()
-cli_level = None
-if args.parent:
-    cli_level = task_by_name(all_tasks, args.parent)
-    if cli_level:
-        cli_level = cli_level.data['task_id']
-
-if args.add:
-    if args.json:
-        new_task = json.loads(args.json)
-    else:
-        new_task = get_new_task(cli_level)
-    if new_task:
-        response = client.add_task(task=new_task)
-        print(response)
-    sys.exit()
-
-if args.display:
-    display_menu(all_tasks, cli_level)
-    sys.exit()
-
-while True:
-    cli_tasks = display_menu(all_tasks, cli_level)
-    cli_task = task_by_id(all_tasks, cli_level)
-    command = input("Enter command: ")
-    # match any part of quit, but not ''
-    if command and 'quit'.startswith(command):
-        break
-    if command.isdigit():
+def goto_cli_context(parent, input_val):
+    child_list = client.tasks_by_parent(parent)
+    # Is this a string we can turn into a number?
+    if input_val.isdigit():
         try:
-            cli_level = cli_tasks[int(command)].data.get('task_id')
+            input_val = int(input_val) 
         except IndexError:
-            print(f"Invalid task {command}")
-    if command in ['up', 'cd']:
-        if cli_level:
-            cli_level = cli_task.data.get('parent', None)
-        continue
-    if command in ['help', 'h', '?']:
+            pass
+    # do we have anumber yet?
+    if not isinstance(input_val, int) or input_val >=len(child_list):
+        print(f"Invalid task {input_val}")
+        return None
+    return child_list[input_val]
+    
+def process_command(parent, input_text):
+    print(f"process_command({parent}, {input_text})")
+    cli_task = client.task_by_id(parent)
+    print(f"cli_task: {cli_task}")
+    cli_tasks = client.tasks_by_parent(cli_task)
+    if input_text.isdigit():
+        return goto_cli_context(parent, input_text)
+    if input_text and 'quit'.startswith(input_text):
+        return 'exit'
+    if input_text in ['up', 'cd']:
+        if cli_task:
+            return cli_task.data.get('parent', None)
+        return None
+    if input_text in ['help', 'h', '?']:
         display_help()
-        continue
-    if command in ['cfg', 'config', 'conf']:
-        edit_config()
-    if command in ['add', 'new', 'a', 'n']:
-        new_task = get_new_task(cli_level)
+        return None
+    if input_text in ['cfg', 'config', 'conf']:
+            edit_config()
+    if input_text in ['add', 'new', 'a', 'n']:
+        new_task = get_new_task(parent)
         if new_task:
             response = client.add_task(task=new_task)
             print(response)
-            all_tasks = client.fetch_all()
-        continue
-    if command and 'tree'.startswith(command):
-        print(yaml.dump(tree(all_tasks, cli_level)))
-        continue
-    match = pattern_two_part.match(command)
+            client.fetch_all()
+        return parent
+    if input_text and 'tree'.startswith(input_text):
+        print(yaml.dump(tree(client.tasks, cli_level)))
+        return parent
+    match = pattern_two_part.match(input_text)
     if match:
         command, index = match.groups()
         index = int(index)
-        try:
-            task_id = cli_tasks[index].data.get('task_id')
-        except IndexError:
-            print(f"Invalid task {index}")
-            continue
-        if command in ['cd', 'go']:
-            cli_level = task_id
-        if command in ['delete', 'del', 'rm']:
-            children = [task for task in all_tasks if task.data.get('parent', None) == task_id]
-            if len(children) > 0:
-                print(f"Deletion would orphan {len(children)} tasks")
-                continue
-            response = client.delete_task(task_id=task_id)
+    try:
+        print(cli_tasks[index])
+        task_id = cli_tasks[index].data.get('task_id')
+    except IndexError:
+        print(f"Invalid task {index}")
+        return parent
+    except AttributeError:
+        print(f"Invalid task {index}")
+        return parent
+    if command in ['cd', 'go']:
+        return goto_cli_context(parent, index)
+    if command in ['delete', 'del', 'rm']:
+        children = client.tasks_by_parent(cli_tasks[index])
+        if len(children) > 0:
+            print(f"Deletion would orphan {len(children)} tasks")
+            return parent
+        response = client.delete_task(task_id=task_id)
+        print(response)
+        client.fetch_all()
+        return parent
+    if command in ["mod", "modify", "edit", 'ed', 'change', 'update', 'upd']:
+        new_task = edit_task(task_id)
+        if new_task:
+            response = client.update_task(task=new_task)
             print(response)
-            all_tasks = client.fetch_all()
-        if command in ["mod", "modify", "edit", 'ed', 'change', 'update', 'upd']:
-            new_task = edit_task(task_id)
-            if new_task:
-                response = client.update_task(task=new_task)
-                print(response)
-                all_tasks = client.fetch_all()
+            client.fetch_all()
+            return parent
+    return False # return False to quit, triggering a loop break in the caller
 
-print("Good Bye!")
+if __name__ == "__main__":
+    pattern_field = re.compile(r'(\w+)\s*:\s*(.*)')
+
+
+    parser = argparse.ArgumentParser(description="A CLI for managing tasks.")
+
+    # Add arguments
+    parser.add_argument('-p', '--parent', type=str, help='Set the target parent.')
+    parser.add_argument('-j', '--json', type=str, help='Set json.')
+    parser.add_argument('-a', '--add', action='store_true', help='Set add to True.')
+    parser.add_argument('-d', '--display', action='store_true', help='Just print the parent')
+
+    # Parse arguments
+    args = parser.parse_args()
+    category_handlers = {
+            'Today': today_menu,
+            'This Week': this_week_menu,
+            'This Month': this_month_menu,
+            'This Quarter': this_quarter_menu,
+            'Tasks': tasks_menu,
+            'Projects': projects_menu,
+        }
+    pattern_two_part = re.compile(r'(\w+)\s+(\d+)')
+
+    all_tasks = client.fetch_all()
+    cli_level = None
+    if args.parent:
+        cli_level = client.task_by_name(args.parent)
+        if cli_level and not isinstance(cli_level, str):
+            cli_level = cli_level.data['task_id']
+
+    if args.add:
+        if args.json:
+            new_task = json.loads(args.json)
+        else:
+            new_task = get_new_task(cli_level)
+        if new_task:
+            response = client.add_task(task=new_task)
+            print(response)
+        sys.exit()
+
+    if args.display:
+        display_menu(all_tasks, cli_level)
+        sys.exit()
+
+    while True:
+        cli_tasks = display_menu(all_tasks, cli_level)
+        cli_task = client.task_by_id(cli_level)
+        command = input("Enter command: ")
+        cli_level = process_command(cli_level, command)
+        if cli_level == 'exit':
+            break
+    print("Good Bye!")

@@ -289,6 +289,10 @@ def handle_task(task_id=None):
 
     # Handle DELETE request
     if request.method == 'DELETE':
+        # FIXME: check for children first so we don't cause orphans
+        children = db.get(query.parent == task_id)
+        if children:
+            return jsonify({'message': 'delete would cause orphans'}), 403
         result = db.remove(query.task_id == task_id)
         if result:
             return jsonify({'message': 'task deleted successfully'}), 200
