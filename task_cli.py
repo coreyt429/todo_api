@@ -69,6 +69,8 @@ def set_task_key(task, key, value):
 
     # Set the final key to the value
     current_dict[keys[-1]] = value
+    if value == 'DELETE':
+        current_dict.pop(keys[-1])
 
 def edit_task(task_id):
     print(f"edit_task({task_id})")
@@ -228,17 +230,24 @@ def process_command(parent, input_text):
         return parent
     match = pattern_two_part.match(input_text)
     if match:
+        print(f"match: {match.groups()}")
         command, index = match.groups()
         index = int(index)
+    else:
+        for category in client.categories:
+            print(f"{input_text} in {category}")
+            if input_text in category.lower():
+                return client.task_by_id(category)
     try:
-        print(cli_tasks[index])
         task_id = cli_tasks[index].data.get('task_id')
     except IndexError:
-        print(cli_tasks)
-        print(f"IndexError: Invalid task {index}")
+        print(f"IndexError: Invalid task {input_text}")
         return parent
     except AttributeError:
-        print(f"AttributeError: Invalid task {index}")
+        print(f"AttributeError: Invalid task {input_text}")
+        return parent
+    except UnboundLocalError:
+        print(f"UnboundLocalError: Invalid task {input_text}")
         return parent
     if command in ['cd', 'go']:
         return goto_cli_context(parent, index)
@@ -258,10 +267,11 @@ def process_command(parent, input_text):
             print(response)
             client.fetch_all()
             return parent
+    
     return False # return False to quit, triggering a loop break in the caller
 
 if __name__ == "__main__":
-    pattern_field = re.compile(r'(\w+)\s*:\s*(.*)')
+    pattern_field = re.compile(r'([\w\.]+)\s*:\s*(.*)')
 
 
     parser = argparse.ArgumentParser(description="A CLI for managing tasks.")

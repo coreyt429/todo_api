@@ -88,7 +88,10 @@ class Task:
         for ts in ['due', 'created', 'updated']:
             ts_old_name = f'ts_{ts}'
             if ts_old_name in self.data:
-                self.data['timestamps'][ts] = self.data.pop(ts_old_name)
+                if ts not in self.data['timestamps']:
+                    self.data['timestamps'][ts] = self.data.pop(ts_old_name)
+                else:
+                    self.data.pop(ts_old_name)
         print(json.dumps(self.data))
         self.data['timestamps']['updated'] = timestamp
         self.refresh()
@@ -97,8 +100,6 @@ class Task:
         t = self.data
         ts = t.get('timestamps',{}).get('due', 'no due date')
         # look for old style due date
-        if ts == 'no due date':
-            ts = t.get('ts_due', 'no due date')
         if not ts == 'no due date':
             ts = self.normalize_to_local_timezone(ts)
         return f"{self.name} [{self.status}]: {ts}"
@@ -216,25 +217,15 @@ class TaskList:
         return new_list
 
     def tasks_by_parent(self, parent=None):
-        #FIXME: trim_completed here could cause orphans, as the client would
-        #    no longer see the children and allow delete
-        #    Options:
-        #        - update api to refuse to delete server side if it would cause orphans
-        #        - update tasks_by_parent to take an optional parameter to override 
-        #            show_completed
-        #    I think I like the first option best, as it protects the data store
-        #
         if not parent:
             return self.categories
         # check for psuedo task for category, and normalize
         try:
             if parent.task_id in self.categories:
                 parent = parent.task_id
-           
         except Exception:
             pass
         if parent in self.categories:
-            #{'name': 'Today', 'parent': None, 'status': 'in_progress', 'task_id': 'be444b84-47ed-42dd-9d87-c6e16b1e7f01', 'timestamps': {'created': '2024-08-05T14:08:28.779291+00:00', 'due': '2024-08-05T22:00:00+00:00', 'updated': '2024-08-09T06:46:22.891011+00:00'}, 'ts_created': '2024-08-05T14:08:28.779291+00:00', 'ts_due': '2024-08-05T22:00:00+00:00', 'ts_updated': '2024-08-05T14:51:37.561561+00:00', 'type': 'task'}
             if parent == 'Today':
                 current_tasks_list = []
                 for task in self.tasks:
@@ -280,7 +271,11 @@ class TaskList:
             print(f"Teach me what should go in the children of {parent}")
             return []
         # assume this is a real parent_id
-        current_tasks_list = [task for task in sorted(self.tasks) if task.data.get('parent', None) == parent]
+        print(f"looks like a real parent {parent} {type(parent)}")
+        if isinstance(parent, Task):
+            current_tasks_list = [task for task in sorted(self.tasks) if task.data.get('parent', None) == parent.task_id]
+        else:
+            current_tasks_list = [task for task in sorted(self.tasks) if task.data.get('parent', None) == parent]
         return  self.trim_completed(current_tasks_list)
 
     def task_by_name(self, task_name, parent=None):
