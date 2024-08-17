@@ -66,7 +66,7 @@ def token_required(f):
     return decorated
 
 app = Flask(__name__)
-CORS(app, origins='http://localhost:8000',
+CORS(app, origins='test.html',
           methods=['GET', 'POST', 'PUT', 'DELETE'],
           allow_headers=['Content-Type', 'Authorization'],
           supports_credentials=True)
