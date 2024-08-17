@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, g
+from flask_cors import CORS
 
 from functools import wraps
 import uuid
@@ -65,7 +66,10 @@ def token_required(f):
     return decorated
 
 app = Flask(__name__)
-
+CORS(app, origins='http://localhost:8000',
+          methods=['GET', 'POST', 'PUT', 'DELETE'],
+          allow_headers=['Content-Type', 'Authorization'],
+          supports_credentials=True)
 # FIXME: move all task handling code into a module to simplify the code here to just api code
 # FIXME: move all actual db file handling to a storage layer under tasks
 def get_db(**kwargs):
