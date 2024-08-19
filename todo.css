@@ -1,0 +1,89 @@
+body {
+    background-color: #121212; /* Dark background */
+    color: #e0e0e0; /* Light text color */
+}
+
+.sidebar {
+    height: 100vh;
+    background-color: #1e1e1e; /* Slightly lighter dark background for sidebar */
+    color: #ffffff; /* White text for sidebar */
+}
+
+.sidebar a {
+    color: #adb5bd; /* Light gray for links */
+    text-decoration: none;
+}
+
+.sidebar a:hover {
+    color: #ffffff; /* White on hover */
+    text-decoration: none;
+}
+
+.task-list {
+    margin-top: 20px;
+}
+
+.task-item {
+    padding: 15px;
+    margin-bottom: 10px;
+    background-color: #2e2e2e; /* Darker background for tasks */
+    color: #ffffff; /* White text for task items */
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Slight shadow for depth */
+}
+
+.task-priority-high {
+    border-left: 5px solid #dc3545; /* Red border for high priority */
+}
+
+.task-priority-medium {
+    border-left: 5px solid #ffc107; /* Yellow border for medium priority */
+}
+
+.task-priority-low {
+    border-left: 5px solid #28a745; /* Green border for low priority */
+}
+
+.breadcrumb {
+    background-color: #121212; /* Match breadcrumb background to task items */
+}
+
+.breadcrumb-item.active {
+    color: #ffffff; /* Active breadcrumb item in white */
+}
+
+#taskDetailsContainer {
+    display: none;
+    background-color: #1e1e1e; /* Match the sidebar for consistency */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+}
+
+input[type="text"], input[type="text"]:focus, textarea, select {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background-color: #2e2e2e;
+    color: #e0e0e0;
+    font-family: Arial, sans-serif;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 4px;
+    background-color: #3f51b5;
+    color: #fff;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #303f9f;
+}

@@ -37,6 +37,7 @@ function load_tasks(callback = test_callback) {
 }
 
 function update_task(task, callback = test_callback) {
+        console.log('update_task('+ JSON.stringify(task) +')')
         fetch(`${BASE_URL}/tasks/${task.task_id}`, {
         method: 'PUT',
         headers: {
