@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter AUTH Token</title>
+    <style>
+        body {
+    background-color: #121212;
+    color: #e0e0e0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    height: 100vh;
+    margin: 0;
+    padding: 20px;
+}
+
+.main-container {
+    display: flex;
+    width: 100%;
+}
+
+.container {
+    background-color: #1e1e1e;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+    margin: 10px;
+    flex: 1;
+}
+
+h1, h2 {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+}
+
+input[type="text"], input[type="text"]:focus, textarea, select {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background-color: #2e2e2e;
+    color: #e0e0e0;
+    font-family: Arial, sans-serif;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 4px;
+    background-color: #3f51b5;
+    color: #fff;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #303f9f;
+}
+
+.error {
+    color: #ff5252;
+    margin-top: 10px;
+}
+
+.task-item {
+    margin-left: 20px;
+    border-left: 2px solid #444;
+    padding-left: 10px;
+    margin-top: 5px;
+}
+
+.task-header {
+    cursor: pointer;
+    padding: 5px 0;
+    color: #e0e0e0;
+}
+
+.task-header:hover {
+    color: #ffffff;
+}
+
+.task-children {
+    margin-top: 10px;
+    margin-left: 20px;
+    border-left: 1px dashed #666;
+}
+#taskDetailsContainer {
+    display: none;
+}
+    </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="container" id="taskContainer">
+        <h1>Enter AUTH Token</h1>
+        <input type="text" id="authTokenInput" placeholder="Enter your AUTH_TOKEN">
+        <button onclick="setAuthToken()">Submit</button>
+        <p id="errorMessage" class="error"></p>
+    </div>
+    <div class="container" id="taskDetailsContainer">
+        <!-- Task details form will be populated here -->
+    </div>
+</div>
+
+    <script>
+      let AUTH_TOKEN = '';
+      let task_list = [];
+
+      function setAuthToken() {
+    const input = document.getElementById('authTokenInput');
+    const errorMessage = document.getElementById('errorMessage');
+    if (input.value.trim() === '') {
+        errorMessage.textContent = 'Please enter a valid AUTH_TOKEN.';
+        return;
+    }
+    AUTH_TOKEN = input.value.trim();
+    errorMessage.textContent = '';
+    console.log('AUTH_TOKEN set to:', AUTH_TOKEN);
+    load_tasks();
+}
+
+function load_tasks() {
+    fetch('https://todo.coreyt.com/tasks', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${AUTH_TOKEN}`
+        },
+        mode: 'cors'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        task_list = data; // Store the fetched data in the global variable
+        console.log('Task list loaded:', task_list);
+        renderTaskTree(task_list); // Render the categorized tree structure
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function renderTaskTree(tasks) {
+    document.title = "Task List"
+    const container = document.getElementById('taskContainer');
+    container.innerHTML = ''; // Clear previous content
+
+    // Filter out completed tasks
+    const filteredTasks = tasks.filter(task => task.status !== 'completed');
+
+    // Categorize tasks
+    const categories = {
+        'Today': [],
+        'This Week': [],
+        'This Month': [],
+        'This Quarter': [],
+        'Tasks': [],
+        'Projects': []
+    };
+
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const weekEnd = new Date(now.setDate(now.getDate() + (7 - now.getDay()))).toISOString().split('T')[0];
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    const quarterEnd = new Date(now.getFullYear(), Math.ceil((now.getMonth() + 1) / 3) * 3, 0).toISOString().split('T')[0];
+
+    filteredTasks.forEach(task => {
+        const dueDate = task.timestamps.due ? task.timestamps.due.split('T')[0] : null;
+
+        if (dueDate) {
+            if (dueDate === today) {
+                categories['Today'].push(task);
+            } else if (dueDate <= weekEnd) {
+                categories['This Week'].push(task);
+            } else if (dueDate <= monthEnd) {
+                categories['This Month'].push(task);
+            } else if (dueDate <= quarterEnd) {
+                categories['This Quarter'].push(task);
+            }
+        }
+
+        if (!task.parent) {
+            if (task.type === 'task') {
+                categories['Tasks'].push(task);
+            } else if (task.type === 'project') {
+                categories['Projects'].push(task);
+            }
+        }
+    });
+
+    // Render each category
+    for (const category in categories) {
+        if (categories[category].length > 0) {
+            const categoryElement = document.createElement('div');
+            categoryElement.innerHTML = `<h2>${category}</h2>`;
+            categories[category].forEach(task => {
+                const taskElement = createTaskElement(task, tasks);
+                categoryElement.appendChild(taskElement);
+            });
+            container.appendChild(categoryElement);
+        }
+    }
+}
+
+function createTaskElement(task, taskList) {
+    const taskElement = document.createElement('div');
+    taskElement.classList.add('task-item');
+    taskElement.innerHTML = `
+        <div class="task-header" onclick="handleTaskClick('${task.task_id}', this)">
+            <strong>${task.name}</strong> - ${task.status}
+        </div>
+    `;
+
+    // Check if this task has children
+    const children = taskList.filter(t => t.parent === task.task_id);
+    if (children.length > 0) {
+        const childContainer = document.createElement('div');
+        childContainer.classList.add('task-children');
+        childContainer.style.display = 'none'; // Start collapsed
+
+        children.forEach(child => {
+            const childElement = createTaskElement(child, taskList);
+            childContainer.appendChild(childElement);
+        });
+
+        taskElement.appendChild(childContainer);
+    }
+
+    return taskElement;
+}
+
+function handleTaskClick(taskId, element) {
+    selectTask(taskId); // Display task details
+    toggleCollapse(element); // Toggle the expansion of the task tree
+}
+
+
+function toggleCollapse(element) {
+    const childContainer = element.nextElementSibling;
+    if (childContainer) {
+        const isCollapsed = childContainer.style.display === 'none';
+        childContainer.style.display = isCollapsed ? 'block' : 'none';
+    }
+}
+
+function selectTask(taskId) {
+    const task = task_list.find(t => t.task_id === taskId);
+    if (task) {
+        document.getElementById('taskDetailsContainer').style.display = 'block'; // Show the container
+        renderTaskForm(task);
+    }
+}
+
+function renderTaskForm(task) {
+    const container = document.getElementById('taskDetailsContainer');
+    container.innerHTML = ''; // Clear previous content
+
+    const form = document.createElement('form');
+    form.id = 'taskForm';
+
+    // Dynamically create form fields based on task properties
+    for (const key in task) {
+        if (task.hasOwnProperty(key)) {
+            const fieldContainer = document.createElement('div');
+            fieldContainer.classList.add('field-container');
+            
+            const label = document.createElement('label');
+            label.textContent = key;
+            fieldContainer.appendChild(label);
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.name = key;
+            input.value = task[key];
+            fieldContainer.appendChild(input);
+            
+            form.appendChild(fieldContainer);
+        }
+    }
+
+    // Add New Subtask button
+    const newSubtaskButton = document.createElement('button');
+    newSubtaskButton.type = 'button';
+    newSubtaskButton.textContent = 'New Subtask';
+    newSubtaskButton.onclick = () => createNewSubtask(task.task_id);
+    form.appendChild(newSubtaskButton);
+
+    // Add field button
+    const addFieldButton = document.createElement('button');
+    addFieldButton.type = 'button';
+    addFieldButton.textContent = 'Add Field';
+    addFieldButton.onclick = addField;
+    form.appendChild(addFieldButton);
+
+    // Save button
+    const saveButton = document.createElement('button');
+    saveButton.type = 'button';
+    saveButton.textContent = 'Save';
+    saveButton.onclick = () => saveTask(task.task_id);
+    form.appendChild(saveButton);
+
+    container.appendChild(form);
+}
+
+
+
+function createNewSubtask(parentTaskId) {
+    const newTask = {
+        name: 'New Task',
+        parent: parentTaskId,
+        status: 'not_started',
+        task_id: '', // Leave empty to be generated upon save
+        timestamps: {
+            created: new Date().toISOString()
+        },
+        type: 'task'
+    };
+
+    renderTaskForm(newTask);
+}
+
+function addField() {
+    const form = document.getElementById('taskForm');
+    const fieldContainer = document.createElement('div');
+    fieldContainer.classList.add('field-container');
+
+    const label = document.createElement('label');
+    label.textContent = 'New Field';
+    fieldContainer.appendChild(label);
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.name = 'newField';
+    fieldContainer.appendChild(input);
+
+    form.appendChild(fieldContainer);
+}
+
+function saveTask(taskId) {
+    const form = document.getElementById('taskForm');
+    const formData = new FormData(form);
+    const updatedTask = {};
+
+    formData.forEach((value, key) => {
+        updatedTask[key] = value;
+    });
+
+    // Send the updated task data to the server
+    fetch(`https://todo.coreyt.com/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${AUTH_TOKEN}`
+        },
+        body: JSON.stringify(updatedTask)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Task updated:', data);
+        load_tasks(); // Reload tasks to reflect changes
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    
+    <style>
+        body {
+            background-color: #121212; /* Dark background */
+            color: #e0e0e0; /* Light text color */
+        }
+
+        .sidebar {
+            height: 100vh;
+            background-color: #1e1e1e; /* Slightly lighter dark background for sidebar */
+            color: #ffffff; /* White text for sidebar */
+        }
+
+        .sidebar a {
+            color: #adb5bd; /* Light gray for links */
+            text-decoration: none;
+        }
+
+        .sidebar a:hover {
+            color: #ffffff; /* White on hover */
+            text-decoration: none;
+        }
+
+        .task-list {
+            margin-top: 20px;
+        }
+
+        .task-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #2e2e2e; /* Darker background for tasks */
+            color: #ffffff; /* White text for task items */
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Slight shadow for depth */
+        }
+
+        .task-priority-high {
+            border-left: 5px solid #dc3545; /* Red border for high priority */
+        }
+
+        .task-priority-medium {
+            border-left: 5px solid #ffc107; /* Yellow border for medium priority */
+        }
+
+        .task-priority-low {
+            border-left: 5px solid #28a745; /* Green border for low priority */
+        }
+
+        .breadcrumb {
+            background-color: #121212; /* Match breadcrumb background to task items */
+        }
+
+        .breadcrumb-item.active {
+            color: #ffffff; /* Active breadcrumb item in white */
+        }
+
+        #taskDetailsContainer {
+            display: none;
+            background-color: #1e1e1e; /* Match the sidebar for consistency */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        input[type="text"], input[type="text"]:focus, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background-color: #2e2e2e;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 4px;
+            background-color: #3f51b5;
+            color: #fff;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #303f9f;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Task List and Task Details Side by Side -->
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar (visible by default on larger screens) -->
+            <div class="col-md-3 col-lg-2 d-none d-md-block sidebar">
+                <h4 class="text-center">Categories</h4>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="category='Today';load_tasks(load_tasks_callback)">Today</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="category='This Week';load_tasks(load_tasks_callback)">This Week</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="category='This Month';load_tasks(load_tasks_callback)">This Month</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="category='This Quarter';load_tasks(load_tasks_callback)">This Quarter</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="category='Tasks';load_tasks(load_tasks_callback)">Tasks</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="category='Projects';load_tasks(load_tasks_callback)">Projects</a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Breadcrumb will be dynamically inserted here -->
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb" id="breadcrumbContainer">
+                        <!-- Breadcrumb items will be dynamically inserted here -->
+                    </ol>
+                </nav>
+
+                <!-- Row for Task List and Task Details -->
+                <div class="row">
+                    <!-- Task List Container -->
+                    <div id="taskListContainer" class="col-md-6 task-list">
+                        <!-- Auth Token Form -->
+                        <h1>Enter AUTH Token</h1>
+                        <input type="text" id="authTokenInput" placeholder="Enter your AUTH_TOKEN">
+                        <button onclick="setAuthToken()">Submit</button>
+                        <p id="errorMessage" class="error"></p>
+                        <!-- Task items will be dynamically inserted here -->
+                    </div>
+
+                    <!-- Task Details Container -->
+                    <div id="taskDetailsContainer" class="col-md-6">
+                        <!-- Task details form will be populated here -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+
+    <!-- Bootstrap JS (Optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    <!-- Tasks JS-->
+    <script src="tasks.js"></script>
+
+    <script>
+        let AUTH_TOKEN = '';
+        let task_list = [];
+        let category = 'Today'
+        let show_completed = false
+
+        function setAuthToken() {
+            const input = document.getElementById('authTokenInput');
+            const errorMessage = document.getElementById('errorMessage');
+            if (input.value.trim() === '') {
+                errorMessage.textContent = 'Please enter a valid AUTH_TOKEN.';
+                return;
+            }
+            AUTH_TOKEN = input.value.trim();
+            errorMessage.textContent = '';
+            console.log('AUTH_TOKEN set to:', AUTH_TOKEN);
+            load_tasks(load_tasks_callback);
+        }
+
+        function load_tasks_callback(task_list){
+            // Load the tasks for "Tasks" by default
+            filterTasks(category);
+        }
+
+        function filterTasks(category) {
+            console.log('filterTasks')
+            // Update Breadcrumb
+            const breadcrumbContainer = document.getElementById('breadcrumbContainer');
+            breadcrumbContainer.innerHTML = ''; // Clear existing breadcrumb
+
+            const breadcrumbItem = document.createElement('li');
+            breadcrumbItem.className = 'breadcrumb-item active';
+            breadcrumbItem.setAttribute('aria-current', 'page');
+            breadcrumbItem.textContent = category;
+            breadcrumbContainer.appendChild(breadcrumbItem);
+
+            // Update Task List
+            const taskListContainer = document.getElementById('taskListContainer');
+            taskListContainer.innerHTML = ''; // Clear existing tasks
+            console.log(category)
+            let filteredTasks = task_list; // Declare filteredTasks in the outer scope
+            if (category === 'Tasks') {
+                filteredTasks = task_list.filter(task => task.type.trim().toLowerCase() === 'task');
+            }
+            else if (category === 'Projects') {
+                filteredTasks = task_list.filter(task => task.type.trim().toLowerCase() === 'project');
+            }
+            else if (category === 'Today') {
+                filteredTasks = task_list.filter(task => {
+                    const dueDate = new Date(task.timestamps.due);
+                    return task.type.trim().toLowerCase() === 'task' && isToday(dueDate);
+                });
+            } else if (category === 'This Week') {
+                filteredTasks = task_list.filter(task => {
+                    const dueDate = new Date(task.timestamps.due);
+                    return task.type.trim().toLowerCase() === 'task' && isThisWeek(dueDate);
+                });
+            } else if (category === 'This Month') {
+                filteredTasks = task_list.filter(task => {
+                    const dueDate = new Date(task.timestamps.due);
+                    return task.type.trim().toLowerCase() === 'task' && isThisMonth(dueDate);
+                });
+            } else if (category === 'This Quarter') {
+                filteredTasks = task_list.filter(task => {
+                    const dueDate = new Date(task.timestamps.due);
+                    return task.type.trim().toLowerCase() === 'task' && isThisQuarter(dueDate);
+                });
+            }
+            if (!show_completed) {
+                filteredTasks = filteredTasks.filter(task => task.status !== 'completed');
+            }
+            filteredTasks.forEach(task => {
+                // Set default priority if it doesn't exist
+                task.priority = task.priority || 'low';
+                task.notes = task.notes || '';
+                const taskElement = document.createElement('div');
+                taskElement.className = `task-item task-priority-${task.priority}`;
+
+                // Parse the ISO timestamp
+                const dueDate = new Date(task.timestamps.due);
+
+                // Get current date information
+                const now = new Date();
+                const tomorrow = new Date(now);
+                tomorrow.setDate(now.getDate() + 1);
+
+                // Determine relative day and format time
+                let formattedDate = '';
+                if (dueDate.toDateString() === now.toDateString()) {
+                    formattedDate = `Today ${dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                } else if (dueDate.toDateString() === tomorrow.toDateString()) {
+                    formattedDate = `Tomorrow ${dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                } else {
+                    formattedDate = `${dueDate.getMonth() + 1}/${dueDate.getDate()} ${dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                }
+
+                taskElement.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        
+                        <div>
+                            <h5><a onclick="selectTask('${task.task_id}')">${task.name}</a></h5>
+                            <p class="mb-0">${task.notes}</p>
+                        </div>
+                        <div class="ms-auto">
+                            <p class="mb-0">${formattedDate}</p>
+                            <p class="mb-0">${task.status}</p>
+                        </div>
+                    </div>
+                `;
+                taskListContainer.appendChild(taskElement);
+            });
+        }
+
+        function selectTask(task_id) {
+            const task = task_list.find(t => t.task_id === task_id);
+            if (task) {
+                document.getElementById('taskDetailsContainer').style.display = 'block'; // Show the container
+                renderTaskForm(task);
+            }
+        }
+
+        function renderTaskForm(task) {
+            const container = document.getElementById('taskDetailsContainer');
+            container.innerHTML = ''; // Clear previous content
+
+            const form = document.createElement('form');
+            form.id = 'taskForm';
+
+            // Dynamically create form fields based on task properties
+            for (const key in task) {
+                if (task.hasOwnProperty(key)) {
+                    const fieldContainer = document.createElement('div');
+                    fieldContainer.classList.add('field-container');
+                    
+                    const label = document.createElement('label');
+                    label.textContent = key;
+                    fieldContainer.appendChild(label);
+                    
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.name = key;
+                    input.value = task[key];
+                    fieldContainer.appendChild(input);
+                    
+                    form.appendChild(fieldContainer);
+                }
+            }
+
+            // Add New Subtask button
+            const newSubtaskButton = document.createElement('button');
+            newSubtaskButton.type = 'button';
+            newSubtaskButton.textContent = 'New Subtask';
+            newSubtaskButton.onclick = () => createNewSubtask(task.task_id);
+            form.appendChild(newSubtaskButton);
+
+            // Add field button
+            const addFieldButton = document.createElement('button');
+            addFieldButton.type = 'button';
+            addFieldButton.textContent = 'Add Field';
+            addFieldButton.onclick = addField;
+            form.appendChild(addFieldButton);
+
+            // Save button
+            const saveButton = document.createElement('button');
+            saveButton.type = 'button';
+            saveButton.textContent = 'Save';
+            saveButton.onclick = () => saveTask(task.task_id);
+            form.appendChild(saveButton);
+
+            container.appendChild(form);
+        }
+
+        function addField() {
+            const form = document.getElementById('taskForm');
+            const fieldContainer = document.createElement('div');
+            fieldContainer.classList.add('field-container');
+
+            const label = document.createElement('label');
+            label.textContent = 'New Field';
+            fieldContainer.appendChild(label);
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.name = 'newField';
+            fieldContainer.appendChild(input);
+
+            form.appendChild(fieldContainer);
+        }
+    </script>
+</body>
+</html>
