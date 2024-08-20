@@ -8,6 +8,18 @@ let categories = [
     'Tasks',
     'Projects'
 ];
+let priorities = [
+    "high",
+    "medium",
+    "low"
+]
+let statii = [
+    "completed",
+    "in_progress",
+    "not_started",
+    "blocked"
+]
+
 let category = 'Today';
 let detail_display = 'form'
 let show_completed = false;
@@ -87,6 +99,34 @@ function filterTasks(category) {
     if (!show_completed) {
         filteredTasks = filteredTasks.filter(task => task.status !== 'completed');
     }
+    filteredTasks.sort((a, b) => {
+        // Priority first
+        if(priorities.indexOf(a.priority) < priorities.indexOf(b.priority)){
+            return -1
+        }
+        if(priorities.indexOf(a.priority) > priorities.indexOf(b.priority)){
+            return 1
+        }
+        
+        // then status
+        if(statii.indexOf(a.status) < statii.indexOf(b.status)){
+            return -1
+        }
+        if(statii.indexOf(a.status) > statii.indexOf(b.status)){
+            return 1
+        }
+
+        // then due date
+        if(a.timestamps.due < b.timestamps.due){
+            return -1
+        }
+        if(a.timestamps.due > b.timestamps.due){
+            return 1
+        }
+        console.log('Tie')
+        return 0
+    })
+    console.log('post_sort', filteredTasks)
     filteredTasks.forEach(task => {
         // Set default priority if it doesn't exist
         task.priority = task.priority || 'low';
@@ -251,6 +291,16 @@ function renderTaskYAML(task) {
     editor.setValue(yamlString);
 }
 
+function updateIsoTimestamp() {
+    base = this.id.replace('.date','').replace('.time','')
+    input_date = document.getElementById(base+'.date')
+    input_time = document.getElementById(base+'.time')
+    input = document.getElementById(base+'.iso')
+    const localDateTime = `${input_date.value}T${input_time.value}:00`;
+    const date = new Date(localDateTime);
+    input.value = date.toISOString();
+}
+
 function renderTaskForm(task) {
     setBreadCrumbs(task.task_id);
     const container = document.getElementById('taskDetailsContainer');
@@ -261,6 +311,9 @@ function renderTaskForm(task) {
 
     const disabled = ['timestamps.created', 'timestamps.updated'];
     const hidden = ['task_id'];
+    const selects = {
+        'status': statii
+    }
 
     // Recursively create form fields based on task properties
     function createFields(obj, parentKey = '') {
@@ -268,32 +321,95 @@ function renderTaskForm(task) {
             if (obj.hasOwnProperty(key)) {
                 const fieldContainer = document.createElement('div');
                 fieldContainer.classList.add('field-container');
-                
+                let dateTimeContainer = ''
                 const fullKey = parentKey ? `${parentKey}.${key}` : key;
-
+                let input = ''
                 if (typeof obj[key] === 'object' && obj[key] !== null) {
                     // Recursively handle nested objects and arrays
                     createFields(obj[key], fullKey);
                 } else {
-                    const input = document.createElement('input');
-                    input.type = 'text';
+                    // Check if the field should be a select
+                    if (Object.keys(selects).includes(fullKey)) {
+                        input = document.createElement('select');
+                        input.name = fullKey;
+                        
+                        selects[fullKey].forEach(option => {
+                            const optionElement = document.createElement('option');
+                            optionElement.value = option;
+                            optionElement.textContent = option;
+                            if(optionElement.value === obj[key]){
+                                optionElement.selected = true
+                            }
+                            input.appendChild(optionElement);
+                        });  
+                    }
+                    else if(fullKey.startsWith('timestamp')){
+                        console.log(fullKey)
+                        input = document.createElement('input');
+                        input.type = 'hidden'
+                        input.id = fullKey+'.iso'
+                        input.name = fullKey
+                        input.value = obj[key]; // Set the ISO value
+                        input_date = document.createElement('input');
+                        input_date.type = 'date'
+                        input_date.id = fullKey+'.date'
+                        input_time = document.createElement('input');
+                        input_time.type = 'time'
+                        input_time.id = fullKey+'.time'
+                        dateTimeContainer = document.createElement('div');
+                        dateTimeContainer.classList.add('date-time-container');
+                        dateTimeContainer.appendChild(input_date)
+                        dateTimeContainer.appendChild(input_time)
+                        // Set initial date and time values
+                        if (obj[key]) {
+                            const date = new Date(obj[key]);
+                            input_date.value = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+                            input_time.value = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); // HH:MM format
+                        }
+
+                        // Add event listeners for updates
+                        input_date.addEventListener('change', updateIsoTimestamp);
+                        input_time.addEventListener('change', updateIsoTimestamp);
+                    }
+                    else{
+                        input = document.createElement('input');
+                        // Check if the field should be hidden
+                        if (hidden.includes(fullKey)) {
+                            input.type = 'hidden';
+                            if(fullKey.startsWith('timestamp')){
+                                input_date.hidden = true;
+                                input_time.hidden = true;
+                            }
+                        }
+                        else{
+                            input.type = 'text';
+                        }
+                        input.value = obj[key];
+                    }
                     input.name = fullKey;
-                    input.value = obj[key];
+                    
                     // Check if the field should be disabled
                     if (disabled.includes(fullKey)) {
                         input.disabled = true;
+                        if(fullKey.startsWith('timestamp')){
+                            input_date.disabled = true;
+                            input_time.disabled = true;
+                        }
                     }
-                    // Check if the field should be hidden
-                    if (hidden.includes(fullKey)) {
-                        input.type = 'hidden';
-                    }
+
                     // Append label only if the input is not hidden
-                    if (input.type !== 'hidden') {
+                    console.log("DEBUG: "+fullKey)
+                    console.log("DEBUG: "+(input.type !== 'hidden' || fullKey.startsWith('timestamp')))
+                    if (input.type !== 'hidden' || fullKey.startsWith('timestamp')) {
                         const label = document.createElement('label');
                         label.textContent = fullKey;
+                        console.log("Label: "+label.textContent)
                         fieldContainer.appendChild(label);
                     }
                     fieldContainer.appendChild(input);
+                    if(fullKey.startsWith('timestamp')){
+                        fieldContainer.appendChild(dateTimeContainer);
+                    }
                 }
                 
                 form.appendChild(fieldContainer);
@@ -328,6 +444,13 @@ function renderTaskForm(task) {
     const alertDiv = document.createElement('div')
     alertDiv.id = 'alertDiv'
     container.appendChild(alertDiv)
+
+    document.querySelector('#taskForm').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // Prevent default to avoid submitting twice
+            saveTask(task.task_id);
+        }
+    });
 }
 
 function addField() {
