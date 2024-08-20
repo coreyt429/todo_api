@@ -53,12 +53,13 @@ function checkStoredAuthToken() {
 }
 
 function load_tasks_callback(task_list){
+    console.log("load_tasks_callback: " + category)
     // Load the tasks for "Tasks" by default
     filterTasks(category);
 }
 
 function filterTasks(category) {
-    console.log('filterTasks')
+    console.log('filterTasks('+category+')')
     // Load BreadCrumbs
     setBreadCrumbs(category)
     // Clear detail form
@@ -94,6 +95,11 @@ function filterTasks(category) {
         filteredTasks = task_list.filter(task => {
             const dueDate = new Date(task.timestamps.due);
             return task.type.trim().toLowerCase() === 'task' && isThisQuarter(dueDate);
+        });
+    } else{
+        filteredTasks = task_list.filter(task => {
+            const dueDate = new Date(task.timestamps.due);
+            return task.parent === category;
         });
     }
     if (!show_completed) {
@@ -151,26 +157,71 @@ function filterTasks(category) {
         } else {
             formattedDate = `${dueDate.getMonth() + 1}/${dueDate.getDate()} ${dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
         }
+        // taskContainer
+        const taskContainer = document.createElement('div');
+        taskContainer.className = 'd-flex justify-content-between align-items-center';
+        // taskLabel
+        const taskLabelContainer = document.createElement('div');
+        const taskLabelH5 = document.createElement('h5');
+        const taskLabelA = document.createElement('a');
+        taskLabelA.onclick = function() {
+            selectTask(task.task_id);
+        };
+        taskLabelA.textContent = task.name;
+        taskLabelH5.appendChild(taskLabelA);
+        taskLabelContainer.appendChild(taskLabelH5);
 
-        taskElement.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center">
-                
-                <div>
-                    <h5><a onclick="selectTask('${task.task_id}')">${task.name}</a></h5>
-                    <p class="mb-0">${task.notes}</p>
-                </div>
-                <div class="ms-auto">
-                    <p class="mb-0">${formattedDate}</p>
-                    <p class="mb-0">${task.status}</p>
-                </div>
-            </div>
-        `;
+        /*
+        // taskNotes
+        const taskLabelNotes = document.createElement('p');
+        taskLabelNotes.className = 'mb-0';
+        taskLabelNotes.textContent = task.notes
+        taskLabelContainer.appendChild(taskLabelNotes)
+        */
+
+        // childTasks
+        let children = task_list.filter(child_task => child_task.parent === task.task_id);
+        const taskChildren = document.createElement('p');
+        taskChildren.textContent = `${children.length} subtasks`;
+        const taskChildrenAnchor = document.createElement('a');
+        taskChildrenAnchor.onclick = function(){
+            console.log('taskChildrenAnchor.onclick');
+            console.log("task_id: " + task.task_id);
+            //category = task.task_id;
+            console.log("category: " + category);
+            filterTasks(task.task_id);
+        }
+        taskChildrenAnchor.appendChild(taskChildren);
+        taskLabelContainer.appendChild(taskChildrenAnchor);
+        taskContainer.appendChild(taskLabelContainer);
+
+        // taskDate
+        const taskDateContainer = document.createElement('div');
+        taskDateContainer.className = 'ms-auto';
+        const dateElement = document.createElement('p');
+        dateElement.className = 'mb-0';
+        dateElement.textContent = formattedDate;
+        taskDateContainer.appendChild(dateElement);
+
+        // taskStatus
+        const statusElement = document.createElement('p');
+        statusElement.className = 'mb-0';
+        statusElement.textContent = task.status;
+        taskDateContainer.appendChild(statusElement);
+        taskContainer.appendChild(taskDateContainer)
+        
+        
+        taskElement.appendChild(taskContainer)
         taskListContainer.appendChild(taskElement);
     });
 }
 
 function selectTask(task_id) {
+    console.log("selectTask("+task_id+")");
+    console.log(task_id);
+    console.log(task_list);
     const task = task_list.find(t => t.task_id === task_id);
+    console.log(task);
     if (task) {
         document.getElementById('taskDetailsContainer').style.display = 'block'; // Show the container
         renderTaskDetail(task);
@@ -228,7 +279,7 @@ function setBreadCrumbs(hint) {
             const breadcrumbItem = document.createElement('li');
             breadcrumbItem.className = 'breadcrumb-item';
             breadcrumbItem.textContent = task.name;
-            breadcrumbItem.addEventListener('click', () => selectTask(task.task_id));
+            breadcrumbItem.addEventListener('click', () => filterTasks(task.task_id));
             breadcrumbContainer.appendChild(breadcrumbItem);
         });
 
@@ -241,6 +292,7 @@ function setBreadCrumbs(hint) {
 }
 
 function renderTaskDetail(task){
+    console.log("renderTaskDetail("+task+")")
     if(detail_display === 'form'){
         renderTaskForm(task)
     }
