@@ -84,7 +84,6 @@ class Task:
         # convert old timestamps
         if 'timestamps' not in self.data:
             self.data['timestamps'] = {}
-        print(json.dumps(self.data))
         for ts in ['due', 'created', 'updated']:
             ts_old_name = f'ts_{ts}'
             if ts_old_name in self.data:
@@ -92,7 +91,6 @@ class Task:
                     self.data['timestamps'][ts] = self.data.pop(ts_old_name)
                 else:
                     self.data.pop(ts_old_name)
-        print(json.dumps(self.data))
         self.data['timestamps']['updated'] = timestamp
         self.refresh()
 
@@ -149,17 +147,17 @@ class TaskList:
             return {"error": "no_task"}
         # make it a task object to set defaults
         task = Task(task)
-        print(json.dumps(task.data,indent=4))
+        #print(json.dumps(task.data,indent=4))
         return self.post(path="task", payload=task.data)
     
     def update_task(self, **kwargs):
-        print(kwargs.get('task'))
+        #print(kwargs.get('task'))
         task = kwargs.get('task', None)
         if not task:
             return {"error": "no_task"}
         # set updated timestamp
         task.updated()
-        print(json.dumps(task.data,indent=4))
+        #print(json.dumps(task.data,indent=4))
         return self.put(path=f"task/{task.data['task_id']}", payload=task.data)
     
     def delete_task(self, **kwargs):
@@ -271,7 +269,7 @@ class TaskList:
             print(f"Teach me what should go in the children of {parent}")
             return []
         # assume this is a real parent_id
-        print(f"looks like a real parent {parent} {type(parent)}")
+        #print(f"looks like a real parent {parent} {type(parent)}")
         if isinstance(parent, Task):
             current_tasks_list = [task for task in sorted(self.tasks) if task.data.get('parent', None) == parent.task_id]
         else:

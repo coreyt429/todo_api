@@ -14,7 +14,7 @@ function test_callback2(response){
 }
 
 function load_tasks(callback = test_callback) {
-    fetch(BASE_URL + '/tasks', {
+    fetch(BASE_URL + '/task', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -36,10 +36,41 @@ function load_tasks(callback = test_callback) {
     .catch(error => console.error('Error:', error));
 }
 
+function get_task(task_id, callback = test_callback) {
+    console.log('get_task('+ task_id +')')
+    fetch(`${BASE_URL}/task/${task_id}`, {
+    method: 'GET',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AUTH_TOKEN}`
+    },
+    mode: 'cors'
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+})
+.then(data => {
+    console.log('Task updated:', data);
+    if (callback) {
+        callback(data);
+    }
+})
+.catch(error => console.error('Error:', error));
+}
+
 function update_task(task, callback = test_callback) {
-        console.log('update_task('+ JSON.stringify(task) +')')
-        fetch(`${BASE_URL}/tasks/${task.task_id}`, {
-        method: 'PUT',
+        console.log('update_task('+ JSON.stringify(task) +')');
+        let url = `${BASE_URL}/task`;
+        let method = 'POST';
+        if(task.task_id){
+            url = `${url}/${task.task_id}`;
+            method = 'PUT';
+        }
+        fetch(url, {
+        method: method,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${AUTH_TOKEN}`

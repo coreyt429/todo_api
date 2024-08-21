@@ -73,7 +73,6 @@ def set_task_key(task, key, value):
         current_dict.pop(keys[-1])
 
 def edit_task(task_id):
-    print(f"edit_task({task_id})")
     while True:
         task = client.task_by_id(task_id)
         print(f"Edit task {task}")
@@ -185,9 +184,9 @@ def display_menu(tasks, parent=None):
     return current_tasks_list
 
 def goto_cli_context(parent, input_val):
-    print(f"goto_cli_context({parent}, {input_val})")
+    #print(f"goto_cli_context({parent}, {input_val})")
     child_list = client.tasks_by_parent(parent)
-    print(f"child_list: {child_list}")
+    #print(f"child_list: {child_list}")
     # Is this a string we can turn into a number?
     if input_val.isdigit():
         try:
@@ -198,8 +197,8 @@ def goto_cli_context(parent, input_val):
     if not isinstance(input_val, int) or input_val >=len(child_list):
         print(f"Invalid task {input_val}")
         return None
-    print(f"input_val: {input_val}")
-    print(f"returning: {child_list[input_val]}")
+    #print(f"input_val: {input_val}")
+    #print(f"returning: {child_list[input_val]}")
     return child_list[input_val]
     
 def process_command(parent, input_text):
@@ -230,12 +229,12 @@ def process_command(parent, input_text):
         return parent
     match = pattern_two_part.match(input_text)
     if match:
-        print(f"match: {match.groups()}")
+        #print(f"match: {match.groups()}")
         command, index = match.groups()
         index = int(index)
     else:
         for category in client.categories:
-            print(f"{input_text} in {category}")
+            #print(f"{input_text} in {category}")
             if input_text in category.lower():
                 return client.task_by_id(category)
     try:

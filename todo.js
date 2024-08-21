@@ -1,5 +1,6 @@
 let AUTH_TOKEN = '';
 let task_list = [];
+let last_task_id = 'default_id';
 let categories = [
     'Today',
     'This Week',
@@ -21,8 +22,11 @@ let statii = [
 ]
 
 let category = 'Today';
-let detail_display = 'form'
+let detail_display = 'yaml' // or 'form' or 'json' should be stored in local storage, and some input to select it
 let show_completed = false;
+let editor;
+let editor_theme = 'ace/theme/tomorrow_night';
+editor_theme = 'ace/theme/github_dark';
 
 checkStoredAuthToken()
 
@@ -181,6 +185,9 @@ function filterTasks(category) {
 
         // childTasks
         let children = task_list.filter(child_task => child_task.parent === task.task_id);
+        if(!show_completed){
+            children = children.filter(child_task => child_task.status !== 'completed');
+        }
         const taskChildren = document.createElement('p');
         taskChildren.textContent = `${children.length} subtasks`;
         const taskChildrenAnchor = document.createElement('a');
@@ -229,6 +236,8 @@ function selectTask(task_id) {
 }
 
 function setBreadCrumbs(hint) {
+    console.log("setBreadCrumbs("+hint+")")
+    if (!hint){return}
     const breadcrumbContainer = document.getElementById('breadcrumbContainer');
     
     // Store the first child for later
@@ -246,6 +255,11 @@ function setBreadCrumbs(hint) {
             load_tasks(load_tasks_callback);
         });
         breadcrumbContainer.appendChild(breadcrumbItem);
+        const breadcrumbItemAdd = document.createElement('li');
+        breadcrumbItemAdd.className = 'breadcrumb-item';
+        breadcrumbItemAdd.textContent = '+';
+        breadcrumbItemAdd.addEventListener('click', () => newTask());
+        breadcrumbContainer.appendChild(breadcrumbItemAdd);
     } else {
         // Assume hint is a task_id and create breadcrumb chain
         let category = null;
@@ -265,23 +279,38 @@ function setBreadCrumbs(hint) {
             breadcrumbContainer.appendChild(breadcrumbItem);
         }
 
+    
         // Build the breadcrumb chain from the selected task up to the root
         let task = task_list.find(t => t.task_id === hint);
+        console.log('setting last_task_id: '+task.task_id)
+        last_task_id = task.task_id
         const breadcrumbChain = [];
 
         while (task) {
             breadcrumbChain.unshift(task);
             task = task_list.find(t => t.task_id === task.parent);
         }
-
+        
         // Add the breadcrumb chain to the container
         breadcrumbChain.forEach(task => {
             const breadcrumbItem = document.createElement('li');
             breadcrumbItem.className = 'breadcrumb-item';
             breadcrumbItem.textContent = task.name;
-            breadcrumbItem.addEventListener('click', () => filterTasks(task.task_id));
+            breadcrumbItem.addEventListener('click', function(){
+                console.log(task.name)
+                filterTasks(task.task_id),
+                renderTaskDetail(task)
+                
+            });
             breadcrumbContainer.appendChild(breadcrumbItem);
         });
+
+        const breadcrumbItemAdd = document.createElement('li');
+        breadcrumbItemAdd.className = 'breadcrumb-item';
+        breadcrumbItemAdd.textContent = '+';
+        console.log('last_task_id: '+last_task_id);
+        breadcrumbItemAdd.addEventListener('click', () => newTask(last_task_id));
+        breadcrumbContainer.appendChild(breadcrumbItemAdd);
 
         // Set the last item as active
         if (breadcrumbContainer.lastChild) {
@@ -291,17 +320,82 @@ function setBreadCrumbs(hint) {
     }
 }
 
+function newTask(parent){
+    console.log('newTask('+parent+')')
+    const date = new Date();
+    let task = {
+        "name": "New Task",
+        "type": "task",
+        "timestamps": {
+            "due": date.toISOString()
+        }
+    }
+    if(parent){
+        task.parent = parent
+    }
+    renderTaskDetail(task)
+}
+
 function renderTaskDetail(task){
-    console.log("renderTaskDetail("+task+")")
-    if(detail_display === 'form'){
-        renderTaskForm(task)
+    console.log("renderTaskDetail("+JSON.stringify(task)+")")
+    if(task.task_id){
+        task_id = task.task_id
+        console.log("renderTaskDetail("+task_id+")")
+        if(detail_display === 'form'){
+            get_task(task_id, renderTaskForm)
+        }
+        else {
+            get_task(task_id, renderTaskEditor)
+        }
+    } else{
+        console.log("renderTaskDetail(new="+JSON.stringify(task)+")")
+        console.log(task)
+        if(detail_display === 'form'){
+            renderTaskForm(task)
+        }
+        else {
+            renderTaskEditor(task)
+        }
     }
-    else if(detail_display === 'json'){
-        renderTaskJSON(task)
+}
+
+function renderTaskEditor(task) {
+    console.log("renderTaskEditor("+JSON.stringify(task)+")")
+    if(task.id){
+        setBreadCrumbs(task.task_id);
     }
-    else if(detail_display === 'yaml'){
-        renderTaskYAML(task)
+    const container = document.getElementById('taskDetailsContainer');
+    container.innerHTML = '<h5>Edit '+detail_display+'</h5>'; // Clear previous content
+
+    const editorDiv = document.createElement('div');
+    editorDiv.id = 'aceEditor';
+    editorDiv.style.height = '500px';
+    editorDiv.style.width = '100%';
+    container.appendChild(editorDiv);
+    editor = ace.edit(editorDiv.id);
+    editor.setTheme(editor_theme); // Optional: set a theme
+    if(detail_display === 'json'){
+        console.log("Editor: JSON")
+        editor.session.setMode('ace/mode/json');
+        editor.setValue(JSON.stringify(task, null, 2)); // Format JSON nicely
+
+    } else if (detail_display === 'yaml') {
+        console.log("Editor: YAML")
+        editor.session.setMode('ace/mode/yaml'); // Format YAML nicely
+        // Convert task object to YAML
+        const yamlString = jsyaml.dump(task);
+        editor.setValue(yamlString);
     }
+    
+    editor.commands.addCommand({
+        name: 'save',
+        bindKey: { win: 'Ctrl-S', mac: 'Command-S' },
+        exec: function(editor) {
+            const content = editor.getValue();
+            console.log('Saving content:', content);
+            editor_save()
+        }
+    });
 }
 
 function renderTaskJSON(task) {
@@ -316,10 +410,19 @@ function renderTaskJSON(task) {
 
     container.appendChild(editorDiv);
 
-    const editor = ace.edit('jsonEditor');
+    editor = ace.edit('jsonEditor');
     editor.session.setMode('ace/mode/json');
-    editor.setTheme('ace/theme/monokai'); // Optional: set a theme
+    editor.setTheme(editor_theme); // Optional: set a theme
     editor.setValue(JSON.stringify(task, null, 2)); // Format JSON nicely
+    editor.commands.addCommand({
+        name: 'save',
+        bindKey: { win: 'Ctrl-S', mac: 'Command-S' },
+        exec: function(editor) {
+            const content = editor.getValue();
+            console.log('Saving content:', content);
+            save_json()
+        }
+    });
 }
 
 function renderTaskYAML(task) {
@@ -334,13 +437,22 @@ function renderTaskYAML(task) {
 
     container.appendChild(editorDiv);
 
-    const editor = ace.edit('yamlEditor');
+    editor = ace.edit('yamlEditor');
     editor.session.setMode('ace/mode/yaml');
-    editor.setTheme('ace/theme/monokai'); // Optional: set a theme
+    editor.setTheme(editor_theme); // Optional: set a theme
 
     // Convert task object to YAML
     const yamlString = jsyaml.dump(task);
     editor.setValue(yamlString);
+    editor.commands.addCommand({
+        name: 'save',
+        bindKey: { win: 'Ctrl-S', mac: 'Command-S' },
+        exec: function(editor) {
+            const content = editor.getValue();
+            console.log('Saving content:', content);
+            save_yaml()
+        }
+    });
 }
 
 function updateIsoTimestamp() {
@@ -578,4 +690,81 @@ function saveTask(taskId) {
     console.log(updatedTask, taskId);
     // Call update_task to handle saving the task
     update_task(updatedTask, saveTaskCallback);
+}
+
+function save_yaml(){
+    var editorContent = editor.getValue();
+    var yamlObject = jsyaml.load(editorContent);
+    update_task(yamlObject)
+}
+
+function save_json(){
+    var editorContent = editor.getValue();
+    var yamlObject = jsyaml.load(editorContent);
+    update_task(yamlObject)
+}
+
+function editor_save(){
+    console.log("editor_save")
+    let editorContent = editor.getValue();
+    let task = {}
+    if (detail_display === 'json'){
+        task = JSON.parse(editorContent)
+    }
+    else if (detail_display === 'yaml'){
+        task = jsyaml.load(editorContent);
+    }
+    let { subtasks, ...remaining_task } = task;
+    if(subtasks){
+        console.log("subtasks detected")
+        // Check the type of subtasks
+        if (Array.isArray(subtasks)) {
+            subtasks.forEach( new_task => {
+                    // FIXME: we need to check to be sure these aren't already added
+                    console.log("new_task: " + new_task)
+                    if (typeof new_task === 'object') {
+                        if(new_task.name){
+                            new_task.parent = task.task_id
+                            if(!new_task.timestamps){
+                                new_task.timestamps = {}
+                            }
+                            if(!new_task.timestamps.due){
+                                new_task.timestamps.due = task.timestamps.due
+                            }
+                            update_task(new_task)
+                        }
+                        else{
+                            console.log("name missing: "+new_task)
+                        }
+                    }
+                    else{
+                        update_task({"name": new_task, "parent": task.task_id, "timestamps":{ "due": task.timestamps.due}})
+                    }
+                }
+            )
+            // subtasks is an array
+            if (subtasks.length > 0 && typeof subtasks[0] === 'object') {
+            // subtasks is an array of objects (dictionaries)
+            // Handle the array of dictionaries case
+            console.log('subtasks is an array of objects');
+            // Your code to handle the array of dictionaries goes here
+            } else {
+            // subtasks is an array of strings
+            // Handle the array of strings case
+            console.log('subtasks is an array of strings');
+            // Your code to handle the array of strings goes here
+            }
+        } else if (typeof subtasks === 'object') {
+            // subtasks is an object (dictionary)
+            // Handle the dictionary case
+            console.log('subtasks is an object');
+            // Your code to handle the dictionary case goes here
+        } else {
+            // subtasks is not an array or object
+            // Handle the unexpected case
+            console.log('subtasks is not an array or object');
+            // Your code to handle the unexpected case goes here
+        }
+    }
+    update_task(remaining_task)
 }
