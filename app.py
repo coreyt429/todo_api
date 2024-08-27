@@ -1,3 +1,7 @@
+"""
+todo_api flask app to handle server side api
+
+"""
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 
@@ -112,98 +116,98 @@ def get_key():
 #  /tasks - deprecated, once client API is fully updated, drop this section
 ####################################################################################################
 
-@app.route('/tasks', methods=['GET'])
-@app.route('/tasks/task_id/<string:task_id>', methods=['GET'])
-@token_required
-def get_tasks(task_id=None):
-    db = get_db()
-    if task_id:
-        # Get a specific task
-        Task = Query()
-        task = db.get(Task.task_id == task_id)
-        if task:
-            return jsonify(task)
-        else:
-            return jsonify({'message': 'Task not found'}), 404
-    else:
-        # Get all tasks
-        tasks = db.all()
-        return jsonify(tasks)
+# @app.route('/tasks', methods=['GET'])
+# @app.route('/tasks/task_id/<string:task_id>', methods=['GET'])
+# @token_required
+# def get_tasks(task_id=None):
+#     db = get_db()
+#     if task_id:
+#         # Get a specific task
+#         Task = Query()
+#         task = db.get(Task.task_id == task_id)
+#         if task:
+#             return jsonify(task)
+#         else:
+#             return jsonify({'message': 'Task not found'}), 404
+#     else:
+#         # Get all tasks
+#         tasks = db.all()
+#         return jsonify(tasks)
 
-# consider combining GET, PUT, and DELETE into one handler on @app.route('/tasks/<string:task_id>', methods=['PUT', 'GET', 'DELETE'])
-# seperate with if request.method == 'GET':
-@app.route('/tasks/search/<string:query>', methods=['GET'])
-@app.route('/tasks/search/<string:field>/<string:query>', methods=['GET'])
-@app.route('/tasks/search', methods=['GET'])
-@token_required
-def get_tasks_search(query=None, field=None):
-    db = get_db()
-    if query:
-        # Get a specific task
-        results = []
-        Task = Query()
-        if field:
-            # how do I look for keyword in field?
-            for item in db.all():
-                if query in item[field]:
-                    results.append(item)
-        else:
-            query = query.lower()
-            for item in db.all():
-                if any(query in str(key).lower() or query in str(value).lower()
-                    for key, value in item.items()):
-                    results.append(item)
-    else:
-        # Get all tasks
-        results = db.all()
-    return jsonify(results)
+# # consider combining GET, PUT, and DELETE into one handler on @app.route('/tasks/<string:task_id>', methods=['PUT', 'GET', 'DELETE'])
+# # seperate with if request.method == 'GET':
+# @app.route('/tasks/search/<string:query>', methods=['GET'])
+# @app.route('/tasks/search/<string:field>/<string:query>', methods=['GET'])
+# @app.route('/tasks/search', methods=['GET'])
+# @token_required
+# def get_tasks_search(query=None, field=None):
+#     db = get_db()
+#     if query:
+#         # Get a specific task
+#         results = []
+#         Task = Query()
+#         if field:
+#             # how do I look for keyword in field?
+#             for item in db.all():
+#                 if query in item[field]:
+#                     results.append(item)
+#         else:
+#             query = query.lower()
+#             for item in db.all():
+#                 if any(query in str(key).lower() or query in str(value).lower()
+#                     for key, value in item.items()):
+#                     results.append(item)
+#     else:
+#         # Get all tasks
+#         results = db.all()
+#     return jsonify(results)
 
-@app.route('/tasks', methods=['POST'])
-@token_required
-def post_tasks():
-    db = get_db()
-    task = request.json
-    task = apply_task_defaults(task)
-    if not task:
-        return jsonify({'message': 'No task provided'}), 400
-    task['task_id'] = str(uuid.uuid4())
-    # Create new task
-    db.insert(task)
-    return jsonify({'message': 'Task created successfully', 'task_id': task['task_id']}), 201
+# @app.route('/tasks', methods=['POST'])
+# @token_required
+# def post_tasks():
+#     db = get_db()
+#     task = request.json
+#     task = apply_task_defaults(task)
+#     if not task:
+#         return jsonify({'message': 'No task provided'}), 400
+#     task['task_id'] = str(uuid.uuid4())
+#     # Create new task
+#     db.insert(task)
+#     return jsonify({'message': 'Task created successfully', 'task_id': task['task_id']}), 201
 
-# consider combining GET, PUT, and DELETE into one handler on @app.route('/tasks/<string:task_id>', methods=['PUT', 'GET', 'DELETE'])
-@app.route('/tasks/<string:task_id>', methods=['PUT'])
-@token_required
-def put_tasks(task_id):
-    db = get_db()
-    task = request.json
-    task = apply_task_defaults(task)
-    # FIXME:  default fields and timestamps should probably be handled in client code
-    task['timestamps']['updated'] = get_current_iso_timestamp()
-    if not task:
-        return jsonify({'message': 'No task provided'}), 400
+# # consider combining GET, PUT, and DELETE into one handler on @app.route('/tasks/<string:task_id>', methods=['PUT', 'GET', 'DELETE'])
+# @app.route('/tasks/<string:task_id>', methods=['PUT'])
+# @token_required
+# def put_tasks(task_id):
+#     db = get_db()
+#     task = request.json
+#     task = apply_task_defaults(task)
+#     # FIXME:  default fields and timestamps should probably be handled in client code
+#     task['timestamps']['updated'] = get_current_iso_timestamp()
+#     if not task:
+#         return jsonify({'message': 'No task provided'}), 400
 
-    if not 'task_id' in task:
-        task['task_id'] = task_id
-        # Update existing task
-    Task = Query()
-    result = db.update(task, Task.task_id == task['task_id'])
-    if result:
-        return jsonify({'message': 'Task updated successfully'}), 200
-    else:
-        return jsonify({'message': 'Task not found'}), 404
+#     if not 'task_id' in task:
+#         task['task_id'] = task_id
+#         # Update existing task
+#     Task = Query()
+#     result = db.update(task, Task.task_id == task['task_id'])
+#     if result:
+#         return jsonify({'message': 'Task updated successfully'}), 200
+#     else:
+#         return jsonify({'message': 'Task not found'}), 404
 
-# consider combining GET, PUT, and DELETE into one handler on @app.route('/tasks/<string:task_id>', methods=['PUT', 'GET', 'DELETE'])
-@app.route('/tasks/delete/<string:task_id>', methods=['DELETE'])
-@token_required
-def delete_task(task_id):
-    db = get_db()
-    Task = Query()
-    result = db.remove(Task.task_id == task_id)
-    if result:
-        return jsonify({'message': 'Task deleted successfully'}), 200
-    else:
-        return jsonify({'message': 'Task not found'}), 404
+# # consider combining GET, PUT, and DELETE into one handler on @app.route('/tasks/<string:task_id>', methods=['PUT', 'GET', 'DELETE'])
+# @app.route('/tasks/delete/<string:task_id>', methods=['DELETE'])
+# @token_required
+# def delete_task(task_id):
+#     db = get_db()
+#     Task = Query()
+#     result = db.remove(Task.task_id == task_id)
+#     if result:
+#         return jsonify({'message': 'Task deleted successfully'}), 200
+#     else:
+#         return jsonify({'message': 'Task not found'}), 404
 
 ####################################################################################################
 #  /task
@@ -274,7 +278,10 @@ def handle_task(task_id=None):
 
         # Set task_id in the JSON if not provided
         task.setdefault('task_id', task_id)
-        # FIXME: if status is completed, we should set timstamp.completed
+        # if status is completed, we should set timstamp.completed
+        if task['status'] == 'completed' and 'completed' not in task['timestamps']:
+            task['timestamps']['completed'] = get_current_iso_timestamp()
+        
         # FIXME: we should .lower() field names before saving
         if request.method == 'POST':
             result = db.insert(task)
@@ -286,10 +293,24 @@ def handle_task(task_id=None):
             return jsonify({'message': 'Failed to create task'}), 503
         
         # Update the task if method is PUT
-        result = db.update(task, query.task_id == task['task_id'])
-        if result:
-            return jsonify({'message': 'task updated successfully'}), 200
-        return jsonify({'message': 'task not found'}), 404
+        # result = db.update(task, query.task_id == task['task_id'])
+        # if result:
+        #     return jsonify({'message': 'task updated successfully'}), 200
+        # return jsonify({'message': 'task not found'}), 404
+        query = Query()
+        
+        # Check if the template exists
+        existing = db.get(query.template_id == task['task_id'])
+        task['timestamps']['updated'] = get_current_iso_timestamp()
+        if existing:
+            # Remove the existing template
+            db.remove(query.task_id == task['task_id'])
+            # Insert the new task
+            db.insert(task)
+            return jsonify({'message': 'Task updated successfully'}), 200
+        else:
+            return jsonify({'message': 'Task not found'}), 404
+
 
     # Handle DELETE request
     if request.method == 'DELETE':

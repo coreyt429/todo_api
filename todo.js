@@ -894,8 +894,11 @@ function editor_save(){
 
 function updateTasksFromTemplates(callback) {
     const today = new Date();
-    
+    // temp short cuircuite until I fix the current templates:
+    first_load = false
+    //callback()
     template_list.forEach(template => {
+        console.log(template)
         // daily and today's DoW is in days
         if (template.criteria.period === 'daily' && template.criteria.days.includes(today.getDay())) {
             const existingTask = task_list.find(task => task.template_id === template.template_id);
@@ -912,8 +915,8 @@ function updateTasksFromTemplates(callback) {
             new_task.type = 'task'
             // Remove 'time' and 'period' fields
             delete new_task.criteria;
-            delete new_task.time.created;
-            delete new_task.time.updated;
+            delete new_task.timestamps.created;
+            delete new_task.timestamps.updated;
             delete new_task.period
             delete new_task.time
 
@@ -925,6 +928,5 @@ function updateTasksFromTemplates(callback) {
         });
     
     console.log(task_list)
-    first_load = false
     callback()
 }
