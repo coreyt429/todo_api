@@ -102,6 +102,11 @@ function isToday(date) {
            date.getFullYear() === today.getFullYear();
 }
 
+function isOverdue(date) {
+    const today = new Date();
+    return date < today
+}
+
 function isThisWeek(date) {
     const today = new Date();
     const firstDayOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));

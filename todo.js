@@ -3,6 +3,7 @@ let task_list = [];
 let last_task_id = 'default_id';
 let categories = [
     'Today',
+    'Overdue',
     'This Week',
     'This Month',
     'This Quarter',
@@ -29,6 +30,12 @@ let editor_theme = 'ace/theme/tomorrow_night';
 editor_theme = 'ace/theme/github_dark';
 
 checkStoredAuthToken()
+
+
+
+function toggleShowCompleted() {
+  show_completed = !show_completed;
+}
 
 function setAuthToken() {
     const input = document.getElementById('authTokenInput');
@@ -58,8 +65,31 @@ function checkStoredAuthToken() {
 
 function load_tasks_callback(task_list){
     console.log("load_tasks_callback: " + category)
+    save_category = category
+    update_counters()
+    category = save_category
     // Load the tasks for "Tasks" by default
     filterTasks(category);
+}
+
+function getCategoryCounterId(category) {
+    return category.toLowerCase().replace(/\s+/g, '_') + '_count';
+}
+
+function update_counter(category, count){
+    counter_id = getCategoryCounterId(category)
+    console.log(category, counter_id, count)
+    p_elem = document.getElementById(counter_id)
+    if(p_elem){
+        let countStr = String(Number(count));
+        // Pad with leading zero if necessary
+        countStr = countStr.padStart(2, '0');
+        p_elem.innerHTML = countStr;
+    }
+}
+
+function update_counters(){
+    categories.forEach(category => filterTasks(category))
 }
 
 function filterTasks(category) {
@@ -85,6 +115,11 @@ function filterTasks(category) {
             const dueDate = new Date(task.timestamps.due);
             return task.type.trim().toLowerCase() === 'task' && isToday(dueDate);
         });
+    } else if (category === 'Overdue') {
+        filteredTasks = task_list.filter(task => {
+            const dueDate = new Date(task.timestamps.due);
+            return task.type.trim().toLowerCase() === 'task' && isOverdue(dueDate);
+        });
     } else if (category === 'This Week') {
         filteredTasks = task_list.filter(task => {
             const dueDate = new Date(task.timestamps.due);
@@ -100,6 +135,7 @@ function filterTasks(category) {
             const dueDate = new Date(task.timestamps.due);
             return task.type.trim().toLowerCase() === 'task' && isThisQuarter(dueDate);
         });
+        
     } else{
         filteredTasks = task_list.filter(task => {
             const dueDate = new Date(task.timestamps.due);
@@ -109,6 +145,7 @@ function filterTasks(category) {
     if (!show_completed) {
         filteredTasks = filteredTasks.filter(task => task.status !== 'completed');
     }
+    update_counter(category, filteredTasks.length)
     filteredTasks.sort((a, b) => {
         // Priority first
         if(priorities.indexOf(a.priority) < priorities.indexOf(b.priority)){
@@ -357,6 +394,7 @@ function renderTaskDetail(task){
             renderTaskEditor(task)
         }
     }
+    document.getElementById('taskDetailsContainer').style.display = 'block';
 }
 
 function renderTaskEditor(task) {
