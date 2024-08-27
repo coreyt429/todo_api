@@ -300,7 +300,7 @@ def handle_task(task_id=None):
         query = Query()
         
         # Check if the template exists
-        existing = db.get(query.template_id == task['task_id'])
+        existing = db.get(query.task_id == task['task_id'])
         task['timestamps']['updated'] = get_current_iso_timestamp()
         if existing:
             # Remove the existing template
