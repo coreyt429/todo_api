@@ -1,4 +1,5 @@
 let AUTH_TOKEN = '';
+let first_load = true
 let task_list = [];
 let last_task_id = 'default_id';
 let categories = [
@@ -59,7 +60,8 @@ function checkStoredAuthToken() {
     if (storedToken) {
         AUTH_TOKEN = storedToken;
         console.log('AUTH_TOKEN loaded from storage:', AUTH_TOKEN);
-        load_tasks(load_tasks_callback);
+        first_load = true
+        load_templates(load_templates_callback);
     }
 }
 
@@ -68,8 +70,28 @@ function load_tasks_callback(task_list){
     save_category = category
     update_counters()
     category = save_category
+    console.log("First load: "+first_load)
+    if(first_load){
+        // create any template tasks
+        updateTasksFromTemplates(function(){
+            load_tasks(load_tasks_callback);
+        })
+    }
     // Load the tasks for "Tasks" by default
     filterTasks(category);
+}
+
+function load_templates_callback(template_list){
+    console.log("load_templates_callback: ")
+    update_counter('templates', template_list.length)
+    // Load the tasks for "Tasks" by default
+    if(category == 'Templates'){
+        listTemplates();
+    }
+    console.log("First load: "+first_load)
+    if(first_load){
+        load_tasks(load_tasks_callback);
+    }
 }
 
 function getCategoryCounterId(category) {
@@ -91,6 +113,55 @@ function update_counter(category, count){
 function update_counters(){
     categories.forEach(category => filterTasks(category))
 }
+
+function listTemplates() {
+    console.log('listTemplates()')
+    // Load BreadCrumbs
+    setBreadCrumbs(category)
+    // Clear detail form
+    const container = document.getElementById('taskDetailsContainer');
+    container.innerHTML = ''; // Clear previous content
+    // Update Task List
+    const taskListContainer = document.getElementById('taskListContainer');
+    taskListContainer.innerHTML = ''; // Clear existing tasks
+    update_counter('templates', template_list.length)
+    template_list.sort((a, b) => {
+        // Priority first
+        if(priorities.indexOf(a.priority) < priorities.indexOf(b.priority)){
+            return -1
+        }
+        if(priorities.indexOf(a.priority) > priorities.indexOf(b.priority)){
+            return 1
+        }
+        return 0
+    })
+    template_list.forEach(template => {
+        // Set default priority if it doesn't exist
+        template.priority = template.priority || 'low';
+        template.notes = template.notes || '';
+        const taskElement = document.createElement('div');
+        taskElement.className = `task-item task-priority-${template.priority}`;
+
+        // taskContainer
+        const taskContainer = document.createElement('div');
+        taskContainer.className = 'd-flex justify-content-between align-items-center';
+
+        // taskLabel
+        const taskLabelContainer = document.createElement('div');
+        const taskLabelH5 = document.createElement('h5');
+        const taskLabelA = document.createElement('a');
+        taskLabelA.onclick = function() {
+            selectTask(template.template_id);
+        };
+        taskLabelA.textContent = template.name;
+        taskLabelH5.appendChild(taskLabelA);
+        taskLabelContainer.appendChild(taskLabelH5);
+        taskContainer.appendChild(taskLabelContainer);
+        taskElement.appendChild(taskContainer)
+        taskListContainer.appendChild(taskElement);
+    });
+}
+
 
 function filterTasks(category) {
     console.log('filterTasks('+category+')')
@@ -134,8 +205,9 @@ function filterTasks(category) {
         filteredTasks = task_list.filter(task => {
             const dueDate = new Date(task.timestamps.due);
             return task.type.trim().toLowerCase() === 'task' && isThisQuarter(dueDate);
-        });
-        
+        });    
+    } else if (category === 'Templates') {
+        filteredTasks = template_list
     } else{
         filteredTasks = task_list.filter(task => {
             const dueDate = new Date(task.timestamps.due);
@@ -264,8 +336,11 @@ function selectTask(task_id) {
     console.log("selectTask("+task_id+")");
     console.log(task_id);
     console.log(task_list);
-    const task = task_list.find(t => t.task_id === task_id);
+    let task = task_list.find(t => t.task_id === task_id);
     console.log(task);
+    if(!task){
+        task = template_list.find(t => t.template_id === task_id);
+    }
     if (task) {
         document.getElementById('taskDetailsContainer').style.display = 'block'; // Show the container
         renderTaskDetail(task);
@@ -281,7 +356,7 @@ function setBreadCrumbs(hint) {
     const firstBreadcrumb = breadcrumbContainer.firstChild;
     breadcrumbContainer.innerHTML = ''; // Clear existing breadcrumb
 
-    if (categories.includes(hint)) {
+    if (categories.includes(hint) || hint === 'Templates') {
         // If hint is a category, just display it
         const breadcrumbItem = document.createElement('li');
         breadcrumbItem.className = 'breadcrumb-item active';
@@ -296,8 +371,8 @@ function setBreadCrumbs(hint) {
         breadcrumbItemAdd.className = 'breadcrumb-item';
         breadcrumbItemAdd.textContent = '+';
         breadcrumbItemAdd.addEventListener('click', () => newTask());
-        breadcrumbContainer.appendChild(breadcrumbItemAdd);
-    } else {
+        breadcrumbContainer.appendChild(breadcrumbItemAdd);      
+    }else {
         // Assume hint is a task_id and create breadcrumb chain
         let category = null;
 
@@ -365,6 +440,16 @@ function newTask(parent){
         "type": "task",
         "timestamps": {
             "due": date.toISOString()
+        }
+    }
+    if(category === 'Templates'){
+        task = {
+            "name": "New Template",
+            "type": "template",
+            "period": "daily",
+            "time": "17:00",
+            "days": [1,2,3,4,5],
+            "priority": "high"
         }
     }
     if(parent){
@@ -805,4 +890,41 @@ function editor_save(){
         }
     }
     update_task(remaining_task)
+}
+
+function updateTasksFromTemplates(callback) {
+    const today = new Date();
+    
+    template_list.forEach(template => {
+        // daily and today's DoW is in days
+        if (template.criteria.period === 'daily' && template.criteria.days.includes(today.getDay())) {
+            const existingTask = task_list.find(task => task.template_id === template.template_id);
+            
+            if (!existingTask) {
+            const [hours, minutes] = template.criteria.time.split(':').map(Number);
+            const dueDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+            const new_task = {
+                ...template,
+                timestamps: {
+                due: dueDate.toISOString()
+                }
+            };
+            new_task.type = 'task'
+            // Remove 'time' and 'period' fields
+            delete new_task.criteria;
+            delete new_task.time.created;
+            delete new_task.time.updated;
+            delete new_task.period
+            delete new_task.time
+
+            
+            task_list.push(new_task);
+            update_task(new_task)
+            }
+        }
+        });
+    
+    console.log(task_list)
+    first_load = false
+    callback()
 }

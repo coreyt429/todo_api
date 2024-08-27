@@ -62,6 +62,10 @@ function get_task(task_id, callback = test_callback) {
 }
 
 function update_task(task, callback = test_callback) {
+        if(task.type === 'template'){
+            update_template(task, callback)
+            return
+        }
         console.log('update_task('+ JSON.stringify(task) +')');
         let url = `${BASE_URL}/task`;
         let method = 'POST';
@@ -128,4 +132,87 @@ function isThisQuarter(date) {
     const startOfQuarter = new Date(today.getFullYear(), startMonth, 1);
     const endOfQuarter = new Date(today.getFullYear(), startMonth + 3, 0);
     return date >= startOfQuarter && date <= endOfQuarter;
+}
+
+
+// Template functions
+
+function load_templates(callback = test_callback) {
+    fetch(BASE_URL + '/template', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${AUTH_TOKEN}`
+        },
+        mode: 'cors'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        template_list = data; // Store the fetched data in the global variable
+        console.log('template list loaded:', template_list);
+        callback(template_list); // Render the categorized tree structure
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function get_template(template_id, callback = test_callback) {
+    console.log('get_template('+ template_id +')')
+    fetch(`${BASE_URL}/template/${template_id}`, {
+    method: 'GET',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AUTH_TOKEN}`
+    },
+    mode: 'cors'
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+})
+.then(data => {
+    console.log('template updated:', data);
+    if (callback) {
+        callback(data);
+    }
+})
+.catch(error => console.error('Error:', error));
+}
+
+function update_template(template, callback = test_callback) {
+        console.log('update_template('+ JSON.stringify(template) +')');
+        let url = `${BASE_URL}/template`;
+        let method = 'POST';
+        if(template.template_id){
+            url = `${url}/${template.template_id}`;
+            method = 'PUT';
+        }
+        fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${AUTH_TOKEN}`
+        },
+        mode: 'cors',
+        body: JSON.stringify(template)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('template updated:', data);
+        if (callback) {
+            callback(data);
+        }
+    })
+    .catch(error => console.error('Error:', error));
 }

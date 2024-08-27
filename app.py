@@ -324,7 +324,11 @@ def apply_template_defaults(template):
 
     # Set top-level defaults
     defaults = {
-        'type': 'daily',
+        'criteria': {
+            'period': 'daily',
+            'days': [1,2,3,4,5],
+            'time': '17:00'
+        },
         'timestamps': {}
     }
     
@@ -368,10 +372,23 @@ def handle_template(template_id=None):
             return jsonify({'message': 'Failed to create template'}), 503
         
         # Update the template if method is PUT
-        result = db.update(template, query.template_id == template['template_id'])
-        if result:
+        #result = db.update(template, query.template_id == template['template_id'])
+        #if result:
+        #    return jsonify({'message': 'Template updated successfully'}), 200
+        #return jsonify({'message': 'Template not found'}), 404
+        query = Query()
+        
+        # Check if the template exists
+        existing = db.get(query.template_id == template['template_id'])
+        template['timestamps']['updated'] = get_current_iso_timestamp()
+        if existing:
+            # Remove the existing template
+            db.remove(query.template_id == template['template_id'])
+            # Insert the new template
+            db.insert(template)
             return jsonify({'message': 'Template updated successfully'}), 200
-        return jsonify({'message': 'Template not found'}), 404
+        else:
+            return jsonify({'message': 'Template not found'}), 404
 
     # Handle DELETE request
     if request.method == 'DELETE':
