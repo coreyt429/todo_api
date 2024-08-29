@@ -116,7 +116,7 @@ CORS(app, origins='*',
 @contextmanager
 def get_db(**kwargs):
     thread_info = f"PID: {os.getpid()}, Thread ID: {threading.get_ident()}"
-    current_app.logger.debug(f"{thread_info} - Attempting to acquire database")
+    logger.debug(f"{thread_info} - Attempting to acquire database")
 
     # default tasks db
     file_name = f"encrypted_{g.user_id}.json"
@@ -143,7 +143,7 @@ def get_db(**kwargs):
             yield db
         finally:
             db.close()
-            current_app.logger.debug(f"{thread_info} - Database connection closed")
+            logger.debug(f"{thread_info} - Database connection closed")
 
 def generate_key():
     # Generate a new key using Fernet
