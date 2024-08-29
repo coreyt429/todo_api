@@ -418,8 +418,9 @@ def apply_template_defaults(template):
 def handle_template(template_id=None):
     logger.debug(f"{request.method} /template/{template_id}")
     #if request.json: 
-    #    logger.debug(json.dumps(request.json, indent=2))
+    logger.debug("Waiting on lock")
     with db_lock:
+        logger.debug("Got lock")
         db = get_db(db='template')
         query = Query()
 
