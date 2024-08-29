@@ -115,7 +115,11 @@ def get_db(**kwargs):
     
     max_attempts = 10
     attempt = 0
-    logger.debug(f"Waiting on lock {local.db.keys()}")
+    # Get the ID of the current thread
+    thread_id = threading.get_ident()
+    # Get the ID of the current process
+    process_id = os.getpid()
+    logger.debug(f"Waiting on lock {local.db.keys()} pid: {process_id}, thread: {thread_id}")
     while file_name in local.db:
         attempt += 1
         print(f"sleeping after attempt {attempt}: keys: {local.db.keys()}")
