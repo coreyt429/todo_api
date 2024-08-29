@@ -12,7 +12,9 @@ from tinydb.storages import JSONStorage
 from cryptography.fernet import Fernet
 import json
 import base64
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
+import shutil
+import os
 
 def get_current_iso_timestamp():
     return datetime.now(timezone.utc).isoformat()
@@ -82,6 +84,18 @@ def get_db(**kwargs):
     # templates db
     if kwargs.get('db', None) == 'template':
         file_name = f"encrypted_{g.user_id}_templates.json"
+    
+    # Get today's date in YYYYMMDD format
+    today = date.today().strftime("%Y%m%d")
+    
+    # Define the backup file name
+    backup_file_name = f"{file_name}.{today}"
+    
+    # Check if the backup file for today exists
+    if not os.path.exists(backup_file_name):
+        # If the original file exists, create a backup
+        if os.path.exists(file_name):
+            shutil.copy2(file_name, backup_file_name)
     
     # Use the encrypted storage
     return TinyDB(file_name, storage=lambda p: EncryptedJSONStorage(p, g.key))
