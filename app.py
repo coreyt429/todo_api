@@ -279,25 +279,24 @@ def get_key():
 @app.route('/task/search', methods=['GET'])
 @token_required
 def get_task_search(query=None, field=None):
-    with db_lock:
-        db = get_db()
-        if query:
-            query = query.lower()
-            results = []
-            if field:
-                for item in db.all():
-                    if query in item[field].lower():
-                        results.append(item)
-            else:
-                for item in db.all():
-                    if any(query in str(key).lower() or query in str(value).lower()
-                        for key, value in item.items()):
-                        results.append(item)
+    db = get_db()
+    if query:
+        query = query.lower()
+        results = []
+        if field:
+            for item in db.all():
+                if query in item[field].lower():
+                    results.append(item)
         else:
-            # Get all tasks
-            results = db.all()
-        close_db()
-        return jsonify(results)
+            for item in db.all():
+                if any(query in str(key).lower() or query in str(value).lower()
+                    for key, value in item.items()):
+                    results.append(item)
+    else:
+        # Get all tasks
+        results = db.all()
+    close_db()
+    return jsonify(results)
 
 def apply_task_defaults(task):
     # Ensure the task is a dictionary
@@ -447,73 +446,72 @@ def handle_template(template_id=None):
     logger.debug(f"{request.method} /template/{template_id}")
     #if request.json: 
     logger.debug("Waiting on lock")
-    with db_lock:
-        logger.debug("Got lock")
-        db = get_db(db='template')
-        query = Query()
+    logger.debug("Got lock")
+    db = get_db(db='template')
+    query = Query()
 
-        # Handle POST and PUT requests (add and update)
-        if request.method in ['POST', 'PUT']:
-            template = apply_template_defaults(request.json)
-            logger.debug(json.dumps(template, indent=2))
-            # Generate a new template_id if not provided in the path
-            if not template_id:
-                template_id = str(uuid.uuid4())
+    # Handle POST and PUT requests (add and update)
+    if request.method in ['POST', 'PUT']:
+        template = apply_template_defaults(request.json)
+        logger.debug(json.dumps(template, indent=2))
+        # Generate a new template_id if not provided in the path
+        if not template_id:
+            template_id = str(uuid.uuid4())
 
-            # Set template_id in the JSON if not provided
-            template.setdefault('template_id', template_id)
-            if request.method == 'POST':
-                result = db.insert(template)
-                close_db(db='template')
-                if result:
-                    return jsonify({
-                        'message': 'Template created successfully',
-                        'template_id': template['template_id']
-                    }), 201
-                return jsonify({'message': 'Failed to create template'}), 503
-            
-            # Update the template if method is PUT
-            #result = db.update(template, query.template_id == template['template_id'])
-            #if result:
-            #    return jsonify({'message': 'Template updated successfully'}), 200
-            #return jsonify({'message': 'Template not found'}), 404
-            query = Query()
-            
-            # Check if the template exists
-            existing = db.get(query.template_id == template['template_id'])
-            template['timestamps']['updated'] = get_current_iso_timestamp()
-            if existing:
-                # Remove the existing template
-                db.remove(query.template_id == template['template_id'])
-                # Insert the new template
-                db.insert(template)
-                close_db(db='template')
-                return jsonify({'message': 'Template updated successfully'}), 200
-            else:
-                close_db(db='template')
-                return jsonify({'message': 'Template not found'}), 404
-
-        # Handle DELETE request
-        if request.method == 'DELETE':
-            result = db.remove(query.template_id == template_id)
+        # Set template_id in the JSON if not provided
+        template.setdefault('template_id', template_id)
+        if request.method == 'POST':
+            result = db.insert(template)
             close_db(db='template')
             if result:
-                return jsonify({'message': 'Template deleted successfully'}), 200
-            return jsonify({'message': 'Template not found'}), 404
-
-        # Handle GET requests
-        if template_id:
-            # Get a specific template
-            template = db.get(query.template_id == template_id)
+                return jsonify({
+                    'message': 'Template created successfully',
+                    'template_id': template['template_id']
+                }), 201
+            return jsonify({'message': 'Failed to create template'}), 503
+        
+        # Update the template if method is PUT
+        #result = db.update(template, query.template_id == template['template_id'])
+        #if result:
+        #    return jsonify({'message': 'Template updated successfully'}), 200
+        #return jsonify({'message': 'Template not found'}), 404
+        query = Query()
+        
+        # Check if the template exists
+        existing = db.get(query.template_id == template['template_id'])
+        template['timestamps']['updated'] = get_current_iso_timestamp()
+        if existing:
+            # Remove the existing template
+            db.remove(query.template_id == template['template_id'])
+            # Insert the new template
+            db.insert(template)
             close_db(db='template')
-            if template:
-                return jsonify(template)
+            return jsonify({'message': 'Template updated successfully'}), 200
+        else:
+            close_db(db='template')
             return jsonify({'message': 'Template not found'}), 404
 
-        # Get all templates if no template_id is provided
-        templates = db.all()
+    # Handle DELETE request
+    if request.method == 'DELETE':
+        result = db.remove(query.template_id == template_id)
         close_db(db='template')
-        return jsonify(templates)
+        if result:
+            return jsonify({'message': 'Template deleted successfully'}), 200
+        return jsonify({'message': 'Template not found'}), 404
+
+    # Handle GET requests
+    if template_id:
+        # Get a specific template
+        template = db.get(query.template_id == template_id)
+        close_db(db='template')
+        if template:
+            return jsonify(template)
+        return jsonify({'message': 'Template not found'}), 404
+
+    # Get all templates if no template_id is provided
+    templates = db.all()
+    close_db(db='template')
+    return jsonify(templates)
 
 @app.teardown_appcontext
 def teardown_db(exception):
