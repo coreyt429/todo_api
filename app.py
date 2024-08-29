@@ -120,22 +120,24 @@ def get_db(**kwargs):
     return TinyDB(file_name, storage=lambda p: EncryptedJSONStorage(p, g.key))
 
 def close_db(**kwargs):
-    # default tasks db
-    file_name = f"encrypted_{g.user_id}.json"
-    # templates db
-    if kwargs.get('db', None) == 'template':
-        file_name = f"encrypted_{g.user_id}_templates.json"
+    print(f"kwargs: {kwargs}")
+    db_name = kwargs.get('db', None)
     if hasattr(local, 'db'):
-        if file_name is None:
+        if db_name is None:
             # Close all databases
             for db in local.db.values():
                 db.close()
             local.db.clear()
-        elif file_name in local.db:
-            # Close specific database
-            local.db[file_name].close()
-            del local.db[file_name]
-
+        else:
+            # default tasks db
+            file_name = f"encrypted_{g.user_id}.json"
+            # templates db
+            if kwargs.get('db', None) == 'template':
+                file_name = f"encrypted_{g.user_id}_templates.json"
+            if file_name in local.db:
+                # Close specific database
+                local.db[file_name].close()
+                del local.db[file_name]
 
 def generate_key():
     # Generate a new key using Fernet
