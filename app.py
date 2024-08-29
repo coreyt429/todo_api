@@ -17,6 +17,7 @@ import shutil
 import os
 import threading
 import logging
+import time
 
 # Configure logging
 logging.basicConfig(
@@ -98,26 +99,37 @@ CORS(app, origins='*',
 # FIXME: move all task handling code into a module to simplify the code here to just api code
 # FIXME: move all actual db file handling to a storage layer under tasks
 def get_db(**kwargs):
+    if not hasattr(local, 'db'):
+        local.db = {}
     # default tasks db
     file_name = f"encrypted_{g.user_id}.json"
     # templates db
     if kwargs.get('db', None) == 'template':
         file_name = f"encrypted_{g.user_id}_templates.json"
-    
     # Get today's date in YYYYMMDD format
     today = date.today().strftime("%Y%m%d")
     
     # Define the backup file name
     backup_file_name = f"{file_name}.{today}"
     
+    max_attempts = 10
+    attempt = 0
+    logger.debug("Waiting on lock")
+    while file_name in local.db:
+        attempt += 1
+        time.sleep(2 * attempt / 1000)
+    
+    logger.debug("Got lock")
     # Check if the backup file for today exists
     if not os.path.exists(backup_file_name):
         # If the original file exists, create a backup
         if os.path.exists(file_name):
             shutil.copy2(file_name, backup_file_name)
-    
+
+    db = TinyDB(file_name, storage=lambda p: EncryptedJSONStorage(p, g.key))
+    local.db[file_name] = db
     # Use the encrypted storage
-    return TinyDB(file_name, storage=lambda p: EncryptedJSONStorage(p, g.key))
+    return db
 
 def close_db(**kwargs):
     print(f"kwargs: {kwargs}")
@@ -329,8 +341,6 @@ def apply_task_defaults(task):
 @token_required
 def handle_task(task_id=None):
     logger.debug(f"{request.method} /task/{task_id}")
-    logger.debug("Waiting on lock")
-    logger.debug("Got lock")
     db = get_db(db='task')
     query = Query()
 
@@ -445,8 +455,6 @@ def apply_template_defaults(template):
 def handle_template(template_id=None):
     logger.debug(f"{request.method} /template/{template_id}")
     #if request.json: 
-    logger.debug("Waiting on lock")
-    logger.debug("Got lock")
     db = get_db(db='template')
     query = Query()
 
