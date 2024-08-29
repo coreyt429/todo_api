@@ -309,8 +309,9 @@ def apply_task_defaults(task):
 @token_required
 def handle_task(task_id=None):
     logger.debug(f"{request.method} /task/{task_id}")
-    
+    logger.debug("Waiting on lock")
     with db_lock:
+        logger.debug("Got lock")
         db = get_db(db='task')
         query = Query()
 
