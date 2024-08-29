@@ -16,7 +16,19 @@ from datetime import datetime, timezone, date
 import shutil
 import os
 from threading import Lock
+import logging
 
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+
+# Create a logger object
+logger = logging.getLogger(__name__)
 
 
 def get_current_iso_timestamp():
@@ -296,7 +308,7 @@ def apply_task_defaults(task):
 @app.route('/task/<string:task_id>', methods=['GET', 'PUT', 'POST', 'DELETE'])
 @token_required
 def handle_task(task_id=None):
-    print(f"{request.method} /task/{task_id}\n{json.dumps(request.json,indent=2)}")
+    logger.debug(f"{request.method} /task/{task_id}\n{json.dumps(request.json,indent=2)}")
     with db_lock:
         db = get_db(db='task')
         query = Query()
@@ -372,7 +384,7 @@ def handle_task(task_id=None):
 #  /template
 ####################################################################################################
 def apply_template_defaults(template):
-    print(f"{request.method} /template/{template}\n{json.dumps(request.json,indent=2)}")
+    logger.debug(f"{request.method} /template/{template}\n{json.dumps(request.json,indent=2)}")
     # Ensure the template is a dictionary
     if not isinstance(template, dict):
         raise ValueError("Expected template to be a dictionary")
