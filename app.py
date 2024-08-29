@@ -308,7 +308,9 @@ def apply_task_defaults(task):
 @app.route('/task/<string:task_id>', methods=['GET', 'PUT', 'POST', 'DELETE'])
 @token_required
 def handle_task(task_id=None):
-    logger.debug(f"{request.method} /task/{task_id}\n{json.dumps(request.json,indent=2)}")
+    logger.debug(f"{request.method} /task/{task_id}")
+    if request.json: 
+        logger.debug(json.dumps(request.json, indent=2))
     with db_lock:
         db = get_db(db='task')
         query = Query()
@@ -384,7 +386,6 @@ def handle_task(task_id=None):
 #  /template
 ####################################################################################################
 def apply_template_defaults(template):
-    logger.debug(f"{request.method} /template/{template}\n{json.dumps(request.json,indent=2)}")
     # Ensure the template is a dictionary
     if not isinstance(template, dict):
         raise ValueError("Expected template to be a dictionary")
@@ -416,6 +417,9 @@ def apply_template_defaults(template):
 @app.route('/template/<string:template_id>', methods=['GET', 'PUT', 'POST', 'DELETE'])
 @token_required
 def handle_template(template_id=None):
+    logger.debug(f"{request.method} /template/{template}")
+    if request.json: 
+        logger.debug(json.dumps(request.json, indent=2))
     with db_lock:
         db = get_db(db='template')
         query = Query()
