@@ -309,8 +309,7 @@ def apply_task_defaults(task):
 @token_required
 def handle_task(task_id=None):
     logger.debug(f"{request.method} /task/{task_id}")
-    if request.json: 
-        logger.debug(json.dumps(request.json, indent=2))
+    
     with db_lock:
         db = get_db(db='task')
         query = Query()
@@ -318,7 +317,7 @@ def handle_task(task_id=None):
         # Handle POST and PUT requests (add and update)
         if request.method in ['POST', 'PUT']:
             task = apply_task_defaults(request.json)
-
+            logger.debug(json.dumps(task, indent=2))
             # Generate a new task_id if not provided in the path
             if not task_id:
                 task_id = str(uuid.uuid4())
@@ -418,8 +417,8 @@ def apply_template_defaults(template):
 @token_required
 def handle_template(template_id=None):
     logger.debug(f"{request.method} /template/{template_id}")
-    if request.json: 
-        logger.debug(json.dumps(request.json, indent=2))
+    #if request.json: 
+    #    logger.debug(json.dumps(request.json, indent=2))
     with db_lock:
         db = get_db(db='template')
         query = Query()
@@ -427,7 +426,7 @@ def handle_template(template_id=None):
         # Handle POST and PUT requests (add and update)
         if request.method in ['POST', 'PUT']:
             template = apply_template_defaults(request.json)
-
+            logger.debug(json.dumps(template, indent=2))
             # Generate a new template_id if not provided in the path
             if not template_id:
                 template_id = str(uuid.uuid4())
