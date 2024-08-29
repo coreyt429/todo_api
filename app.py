@@ -417,7 +417,7 @@ def apply_template_defaults(template):
 @app.route('/template/<string:template_id>', methods=['GET', 'PUT', 'POST', 'DELETE'])
 @token_required
 def handle_template(template_id=None):
-    logger.debug(f"{request.method} /template/{template}")
+    logger.debug(f"{request.method} /template/{template_id}")
     if request.json: 
         logger.debug(json.dumps(request.json, indent=2))
     with db_lock:
