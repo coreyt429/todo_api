@@ -115,10 +115,11 @@ def get_db(**kwargs):
     
     max_attempts = 10
     attempt = 0
-    logger.debug("Waiting on lock")
+    logger.debug(f"Waiting on lock {local.db.keys()}")
     while file_name in local.db:
         attempt += 1
-        time.sleep(random.random(10) * attempt / 1000)
+        print(f"sleeping after attempt {attempt}: keys: {local.db.keys()}")
+        time.sleep(random.random() * 100 * attempt / 1000)
     
     logger.debug("Got lock")
     # Check if the backup file for today exists
