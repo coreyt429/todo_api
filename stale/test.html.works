@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter AUTH Token</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            width: 300px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background-color: #2e2e2e;
+            color: #e0e0e0;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #3f51b5;
+            color: #fff;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #303f9f;
+        }
+        .error {
+            color: #ff5252;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Enter AUTH Token</h1>
+        <input type="text" id="authTokenInput" placeholder="Enter your AUTH_TOKEN">
+        <button onclick="setAuthToken()">Submit</button>
+        <p id="errorMessage" class="error"></p>
+    </div>
+
+    <script>
+      /*
+      Example Task List:
+      JSON.stringify(task_list)
+'[{"name":"pipeline health dial","parent":null,"status":"not_started","task_id":"a52213bf-51f6-4745-81b4-8149e9af425e","timestamps":{"created":"2024-08-05T14:54:08.852255+00:00","due":"2024-08-16T22:00:00+00:00","updated":"2024-08-16T06:47:44.342696+00:00"},"timstamps":{"due":"2024-08-14T22:00:00+00:00"},"ts_created":"2024-08-05T14:54:08.852255+00:00","ts_due":"2024-08-05T22:00:00+00:00","ts_updated":"2024-08-05T14:57:59.913060+00:00","type":"task"},{"name":"start ve_info","parent":null,"status":"in_progress","task_id":"82285eac-2f82-48b8-a82d-30efa1723fdb","timestamps":{"created":"2024-08-05T14:55:31.945365+00:00","due":"2024-08-16T22:00:00+00:00","updated":"2024-08-16T06:47:50.344526+00:00"},"ts_created":"2024-08-05T14:55:31.945365+00:00","ts_due":"2024-08-05T22:00:00+00:00","ts_updated":"2024-08-05T16:48:09.450937+00:00","type":"task"},{"name":"Move build script forward","parent":null,"status":"fixme 26, error 310","task_id":"2d4c5776-da6b-4a75-9bed-13c5a7cffebd","timestamps":{"created":"2024-08-06T14:35:49.319001+00:00","due":"2024-08-16T22:00:00+00:00","updated":"2024-08-16T06:47:35.209938+00:00"},"ts_created":"2024-08-06T14:35:49.319001+00:00","ts_due":"2024-08-06T22:00:00+00:00","ts_updated":"2024-08-08T19:11:47.952438+00:00","type":"task"},{"name":"PHL MS Licenses","parent":null,"status":"completed","task_id":"282835ca-5088-4ba6-a6b3-fdd2eeb4cf49","timestamps":{"created":"2024-08-06T14:37:50.308860+00:00","due":"2024-08-06T22:00:00+00:00","updated":"2024-08-12T19:43:02.438178+00:00"},"ts_created":"2024-08-06T14:37:50.308860+00:00","ts_due":"2024-08-06T22:00:00+00:00","type":"task"},{"name":"Apply MS Licenses 697797418","parent":null,"status":"completed","task_id":"34dc4000-231f-482f-a975-159114f518e7","timestamps":{"created":"2024-08-12T19:43:59.996877+00:00","due":"2024-08-13T17:00:00-05:00","updated":"2024-08-13T19:35:11.906162+00:00"},"timestamps.due":"2024-08-13T17:00:00-05:00","type":"task"},{"name":"Configure new MS servers","parent":"Tasks","status":"completed","task_id":"c71754e1-8709-4dec-a199-0ebf2d8fc86c","timestamps":{"created":"2024-08-15T11:45:46.881944+00:00","due":"2024-08-15T22:00:00+00:00","updated":"2024-08-15T18:01:35.379078+00:00"},"timestamps.due":"2024-08-15T22:00:00+00:00","type":"task"},{"name":"mondago bandaid for katie","parent":"Today","status":"completed","task_id":"66298949-89a2-4067-a8b6-b7470dd89c1d","timestamps":{"created":"2024-08-15T18:01:53.386993+00:00","due":"2024-08-15T22:00:00+00:00"},"type":"task"}]'
+
+      */
+        let AUTH_TOKEN = '';
+        let task_list =  [];
+        function setAuthToken() {
+            const input = document.getElementById('authTokenInput');
+            const errorMessage = document.getElementById('errorMessage');
+            if (input.value.trim() === '') {
+                errorMessage.textContent = 'Please enter a valid AUTH_TOKEN.';
+                return;
+            }
+            AUTH_TOKEN = input.value.trim();
+            errorMessage.textContent = '';
+            console.log('AUTH_TOKEN set to:', AUTH_TOKEN);
+            load_tasks()
+        }
+
+        function load_tasks() {
+          fetch('https://todo.coreyt.com/tasks', {
+              method: 'GET',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${AUTH_TOKEN}` // Add the bearer token here
+              },
+              mode: 'cors'
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              return response.json();
+          })
+          .then(data => {
+              task_list = data; // Store the fetched data in the global variable
+              console.log('Task list loaded:', task_list); // Optional: Log the task list
+          })
+          .catch(error => console.error('Error:', error));
+      }
+    </script>
+</body>
+</html>
