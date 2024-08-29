@@ -18,6 +18,7 @@ import os
 import threading
 import logging
 import time
+import random
 
 # Configure logging
 logging.basicConfig(
@@ -117,7 +118,7 @@ def get_db(**kwargs):
     logger.debug("Waiting on lock")
     while file_name in local.db:
         attempt += 1
-        time.sleep(2 * attempt / 1000)
+        time.sleep(random.random(10) * attempt / 1000)
     
     logger.debug("Got lock")
     # Check if the backup file for today exists
