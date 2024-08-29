@@ -495,6 +495,14 @@ function renderTaskEditor(task) {
     editorDiv.style.height = '500px';
     editorDiv.style.width = '100%';
     container.appendChild(editorDiv);
+
+    // alert div
+    const alertDiv = document.createElement('div');
+    alertDiv.id = 'aceEditorAlert';
+    alertDiv.classList = 'alert alert-dark'
+    alertDiv.innerHTML = "No changes"
+    container.appendChild(alertDiv);
+
     editor = ace.edit(editorDiv.id);
     editor.setTheme(editor_theme); // Optional: set a theme
     if(detail_display === 'json'){
@@ -518,6 +526,12 @@ function renderTaskEditor(task) {
             console.log('Saving content:', content);
             editor_save()
         }
+    });
+
+    editor.on('change', function() {
+        // alert div
+        alertDiv.classList = 'alert alert-warning'
+        alertDiv.innerHTML = "Unsaved changes"
     });
 }
 
@@ -889,40 +903,62 @@ function editor_save(){
             // Your code to handle the unexpected case goes here
         }
     }
-    update_task(remaining_task)
+    update_task(remaining_task, editor_save_callback)
+}
+
+function editor_save_callback(response){
+    const alertDiv = document.getElementById('aceEditorAlert')
+    alertDiv.classList = 'alert alert-success';
+    alertDiv.innerHTML = response.message
 }
 
 function updateTasksFromTemplates(callback) {
     const today = new Date();
+    today.setHours(0, 0, 0, 0)
     // temp short cuircuite until I fix the current templates:
     first_load = false
     //callback()
     template_list.forEach(template => {
-        console.log(template)
+        console.log("Considering Template: "+template.name)
         // daily and today's DoW is in days
         if (template.criteria.period === 'daily' && template.criteria.days.includes(today.getDay())) {
-            const existingTask = task_list.find(task => task.template_id === template.template_id);
-            
-            if (!existingTask) {
-            const [hours, minutes] = template.criteria.time.split(':').map(Number);
-            const dueDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
-            const new_task = {
-                ...template,
-                timestamps: {
-                due: dueDate.toISOString()
+            console.log(template.template_id)
+            const existing_task_list = task_list.filter(task => task.template_id === template.template_id);
+            console.log(existing_task_list)
+            let existingTask = false
+            existing_task_list.forEach(existing_task => {
+                    console.log(existing_task)
+                    let due = new Date(existing_task.timestamps.due)
+                    due.setHours(0, 0, 0, 0)
+                    console.log("Due: "+due.getTime())
+                    console.log("Today: "+today.getTime())
+                    console.log("Equael? " + (due.getTime() === today.getTime()))
+                    if(due.getTime() === today.getTime()){
+                        existingTask = true
+                    }
                 }
-            };
-            new_task.type = 'task'
-            // Remove 'time' and 'period' fields
-            delete new_task.criteria;
-            delete new_task.timestamps.created;
-            delete new_task.timestamps.updated;
-            delete new_task.period
-            delete new_task.time
+            )
 
             
-            task_list.push(new_task);
-            update_task(new_task)
+            if (!existingTask) {
+                console.log("Creating Task from Template: "+template.name)
+                const [hours, minutes] = template.criteria.time.split(':').map(Number);
+                const dueDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+                const new_task = {
+                    ...template,
+                    timestamps: {
+                    due: dueDate.toISOString()
+                    }
+                };
+                new_task.type = 'task'
+                // Remove 'time' and 'period' fields
+                delete new_task.criteria;
+                delete new_task.timestamps.created;
+                delete new_task.timestamps.updated;
+                delete new_task.period
+                delete new_task.time              
+                task_list.push(new_task);
+                update_task(new_task)
             }
         }
         });
