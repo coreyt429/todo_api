@@ -237,7 +237,7 @@ def apply_task_defaults(task):
 @token_required
 def handle_task(task_id=None):
     logger.debug(f"{request.method} /task/{task_id}")
-
+    query = Query()
 
     # Handle POST and PUT requests (add and update)
     if request.method in ['POST', 'PUT']:
@@ -269,7 +269,6 @@ def handle_task(task_id=None):
         # if result:
         #     return jsonify({'message': 'task updated successfully'}), 200
         # return jsonify({'message': 'task not found'}), 404
-        query = Query()
         with get_db(db='task') as db:
             # Check if the template exists
             existing = db.get(query.task_id == task['task_id'])
@@ -308,7 +307,6 @@ def handle_task(task_id=None):
         return jsonify({'message': 'task not found'}), 404
     
     with get_db(db='task') as db:
-        query = Query()
         # Get all tasks if no task_id is provided
         tasks = db.all()
     return jsonify(tasks)
@@ -349,6 +347,8 @@ def apply_template_defaults(template):
 @token_required
 def handle_template(template_id=None):
     logger.debug(f"{request.method} /template/{template_id}")
+    query = Query()
+
     #if request.json: 
     # Handle POST and PUT requests (add and update)
     if request.method in ['POST', 'PUT']:
@@ -375,7 +375,6 @@ def handle_template(template_id=None):
         #if result:
         #    return jsonify({'message': 'Template updated successfully'}), 200
         #return jsonify({'message': 'Template not found'}), 404
-        query = Query()
         
         with get_db(db='template') as db:
             # Check if the template exists
