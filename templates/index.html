@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Ace Editor CSS-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ace-builds@1/css/ace.min.css">
+    
+    <link href="static/css/todo.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Task List and Task Details Side by Side -->
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar (visible by default on larger screens) -->
+            <div class="col-md-3 col-lg-2 d-none d-md-block sidebar d-flex flex-column">
+                <div class="flex-grow-1">
+                    <h4 class="text-center">Categories</h4>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="category='Today';load_tasks(load_tasks_callback)"><span id="today_count" class="badge"></span> Today</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="category='Overdue';load_tasks(load_tasks_callback)"><span id="overdue_count" class="badge"></span> Overdue</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="category='This Week';load_tasks(load_tasks_callback)"><span id="this_week_count" class="badge"></span> This Week</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="category='This Month';load_tasks(load_tasks_callback)"><span id="this_month_count" class="badge"></span> This Month</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="category='This Quarter';load_tasks(load_tasks_callback)"><span id="this_quarter_count" class="badge"></span> This Quarter</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="category='Tasks';load_tasks(load_tasks_callback)"><span id="tasks_count" class="badge"></span> Tasks</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="category='Projects';load_tasks(load_tasks_callback)"><span id="projects_count" class="badge"></span> Projects</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="category='Templates';load_templates(load_templates_callback)"><span id="templates_count" class="badge"></span> Templates</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="mt-auto">
+                    <hr>
+                    <div class="container">
+                        <div class="row">
+                            <div class="col">
+                                <a href="#" class="btn btn-outline-secondary btn-sm me-2" onclick="detail_display='json'">J</a>
+                                <a href="#" class="btn btn-outline-secondary btn-sm me-2" onclick="detail_display='yaml'">Y</a>
+                                <a href="#" class="btn btn-outline-secondary btn-sm" onclick="detail_display='form'">F</a>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col">
+                                <label class="custom-checkbox">
+                                    <input type="checkbox" id="showCompletedCheckbox" onclick="toggleShowCompleted()">
+                                    <span class="checkmark"></span>
+                                    <span class="custom-checkbox-label">Show completed</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Breadcrumb will be dynamically inserted here -->
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb" id="breadcrumbContainer">
+                        <!-- Breadcrumb items will be dynamically inserted here -->
+                    </ol>
+                </nav>
+
+                <!-- Row for Task List and Task Details -->
+                <div class="row">
+                    <!-- Task List Container -->
+                    <div id="taskListContainer" class="col-md-6 task-list">
+                        <!-- Auth Token Form -->
+                        <h1>Enter AUTH Token</h1>
+                        <input type="text" id="authTokenInput" placeholder="Enter your AUTH_TOKEN">
+                        <button onclick="setAuthToken()">Submit</button>
+                        <p id="errorMessage" class="error"></p>
+                        <!-- Task items will be dynamically inserted here -->
+                    </div>
+
+                    <!-- Task Details Container -->
+                    <div id="taskDetailsContainer" class="col-md-6">
+                        <!-- Task details form will be populated here -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS (Optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+    <!--  Ace Editor JS-->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/ace-builds@1/src-min-noconflict/ace.min.js"></script>
+
+    <!-- YAML JS-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+
+
+    <!-- Tasks JS-->
+    <script src="static/js/tasks.js"></script>
+    <script src="static/js/todo.js"></script>
+</body>
+</html>

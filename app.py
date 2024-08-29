@@ -2,7 +2,7 @@
 todo_api flask app to handle server side api
 
 """
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, render_template
 from flask_cors import CORS
 
 from functools import wraps
@@ -90,6 +90,15 @@ def generate_key():
     # Generate a new key using Fernet
     key = Fernet.generate_key()
     return key.decode()  # Convert the key from bytes to a string
+
+####################################################################################################
+#  HTML
+####################################################################################################
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
 
 ####################################################################################################
 #  Key management
