@@ -93,6 +93,7 @@ button:hover {
 input[type="text"], 
 input[type="date"],
 input[type="time"],
+
 textarea, 
 select {
     padding: 10px;

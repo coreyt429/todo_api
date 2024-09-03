@@ -162,91 +162,10 @@ function listTemplates() {
     });
 }
 
-
-function filterTasks(category) {
-    console.log('filterTasks('+category+')')
-    // Load BreadCrumbs
-    setBreadCrumbs(category)
-    // Clear detail form
-    const container = document.getElementById('taskDetailsContainer');
-    container.innerHTML = ''; // Clear previous content
-    // Update Task List
+// Function to render tasks
+function renderTasks(tasks) {
     const taskListContainer = document.getElementById('taskListContainer');
-    taskListContainer.innerHTML = ''; // Clear existing tasks
-    console.log(category)
-    let filteredTasks = task_list; // Declare filteredTasks in the outer scope
-    if (category === 'Tasks') {
-        filteredTasks = task_list.filter(task => task.type.trim().toLowerCase() === 'task');
-    }
-    else if (category === 'Projects') {
-        filteredTasks = task_list.filter(task => task.type.trim().toLowerCase() === 'project');
-    }
-    else if (category === 'Today') {
-        filteredTasks = task_list.filter(task => {
-            const dueDate = new Date(task.timestamps.due);
-            return task.type.trim().toLowerCase() === 'task' && isToday(dueDate);
-        });
-    } else if (category === 'Overdue') {
-        filteredTasks = task_list.filter(task => {
-            const dueDate = new Date(task.timestamps.due);
-            return task.type.trim().toLowerCase() === 'task' && isOverdue(dueDate);
-        });
-    } else if (category === 'This Week') {
-        filteredTasks = task_list.filter(task => {
-            const dueDate = new Date(task.timestamps.due);
-            return task.type.trim().toLowerCase() === 'task' && isThisWeek(dueDate);
-        });
-    } else if (category === 'This Month') {
-        filteredTasks = task_list.filter(task => {
-            const dueDate = new Date(task.timestamps.due);
-            return task.type.trim().toLowerCase() === 'task' && isThisMonth(dueDate);
-        });
-    } else if (category === 'This Quarter') {
-        filteredTasks = task_list.filter(task => {
-            const dueDate = new Date(task.timestamps.due);
-            return task.type.trim().toLowerCase() === 'task' && isThisQuarter(dueDate);
-        });    
-    } else if (category === 'Templates') {
-        filteredTasks = template_list
-    } else{
-        filteredTasks = task_list.filter(task => {
-            const dueDate = new Date(task.timestamps.due);
-            return task.parent === category;
-        });
-    }
-    if (!show_completed) {
-        filteredTasks = filteredTasks.filter(task => task.status !== 'completed');
-    }
-    update_counter(category, filteredTasks.length)
-    filteredTasks.sort((a, b) => {
-        // Priority first
-        if(priorities.indexOf(a.priority) < priorities.indexOf(b.priority)){
-            return -1
-        }
-        if(priorities.indexOf(a.priority) > priorities.indexOf(b.priority)){
-            return 1
-        }
-        
-        // then status
-        if(statii.indexOf(a.status) < statii.indexOf(b.status)){
-            return -1
-        }
-        if(statii.indexOf(a.status) > statii.indexOf(b.status)){
-            return 1
-        }
-
-        // then due date
-        if(a.timestamps.due < b.timestamps.due){
-            return -1
-        }
-        if(a.timestamps.due > b.timestamps.due){
-            return 1
-        }
-        console.log('Tie')
-        return 0
-    })
-    console.log('post_sort', filteredTasks)
-    filteredTasks.forEach(task => {
+    tasks.forEach(task => {
         // Set default priority if it doesn't exist
         task.priority = task.priority || 'low';
         task.notes = task.notes || '';
@@ -330,6 +249,114 @@ function filterTasks(category) {
         taskElement.appendChild(taskContainer)
         taskListContainer.appendChild(taskElement);
     });
+}
+
+function filterTasks(category) {
+    console.log('filterTasks(' + category + ')');
+    const taskListContainer = document.getElementById('taskListContainer');
+    taskListContainer.innerHTML = ''; // Clear existing tasks
+
+    // Load BreadCrumbs
+    setBreadCrumbs(category);
+    // Clear detail form
+    const container = document.getElementById('taskDetailsContainer');
+    container.innerHTML = ''; // Clear previous content
+    
+    // Add text filter input
+    const filterInputContainer = document.createElement('div');
+    filterInputContainer.className = 'mb-3';
+    const filterInput = document.createElement('input');
+    filterInput.type = 'text';
+    filterInput.id = 'taskFilterInput';
+    filterInput.className = 'form-control';
+    filterInput. placeholder = 'Filter tasks...';
+    filterInputContainer.appendChild(filterInput);
+    taskListContainer.appendChild(filterInputContainer);
+
+    console.log(category);
+    let filteredTasks = task_list; // Declare filteredTasks in the outer scope
+
+    // Apply category filter
+    if (category === 'Tasks') {
+        filteredTasks = task_list.filter(task => task.type.trim().toLowerCase() === 'task');
+    } else if (category === 'Projects') {
+        filteredTasks = task_list.filter(task => task.type.trim().toLowerCase() === 'project');
+    } else if (category === 'Today') {
+        filteredTasks = task_list.filter(task => {
+            const dueDate = new Date(task.timestamps.due);
+            return task.type.trim().toLowerCase() === 'task' && isToday(dueDate);
+        });
+    } else if (category === 'Overdue') {
+        filteredTasks = task_list.filter(task => {
+            const dueDate = new Date(task.timestamps.due);
+            return task.type.trim().toLowerCase() === 'task' && isOverdue(dueDate);
+        });
+    } else if (category === 'This Week') {
+        filteredTasks = task_list.filter(task => {
+            const dueDate = new Date(task.timestamps.due);
+            return task.type.trim().toLowerCase() === 'task' && isThisWeek(dueDate);
+        });
+    } else if (category === 'This Month') {
+        filteredTasks = task_list.filter(task => {
+            const dueDate = new Date(task.timestamps.due);
+            return task.type.trim().toLowerCase() === 'task' && isThisMonth(dueDate);
+        });
+    } else if (category === 'This Quarter') {
+        filteredTasks = task_list.filter(task => {
+            const dueDate = new Date(task.timestamps.due);
+            return task.type.trim().toLowerCase() === 'task' && isThisQuarter(dueDate);
+        });    
+    } else if (category === 'Templates') {
+        filteredTasks = template_list;
+    } else{
+        filteredTasks = task_list.filter(task => {
+            return task.parent === category;
+        });
+    }
+    if (!show_completed) {
+        filteredTasks = filteredTasks.filter(task => task.status !== 'completed');
+    }
+    
+    update_counter(category, filteredTasks.length);
+    filteredTasks.sort((a, b) => {
+        // Priority first
+        if(priorities.indexOf(a.priority) < priorities.indexOf(b.priority)){
+            return -1;
+        }
+        if(priorities.indexOf(a.priority) > priorities.indexOf(b.priority)){
+            return 1;
+        }
+        
+        // then status
+        if(statii.indexOf(a.status) < statii.indexOf(b.status)){
+            return -1;
+        }
+        if(statii.indexOf(a.status) > statii.indexOf(b.status)){
+            return 1;
+        }
+
+        // then due date
+        if(a.timestamps.due < b.timestamps.due){
+            return -1;
+        }
+        if(a.timestamps.due > b.timestamps.due){
+            return 1;
+        }
+        console.log('Tie');
+        return 0;
+    });
+    console.log('post_sort', filteredTasks);
+    renderTasks(filteredTasks);
+    // Add event listener for text filter
+    filterInput.addEventListener('input', function() {
+        const filterText = this.value.toLowerCase();
+        const task_items = document.getElementsByClassName('task-item');
+        Array.from(task_items).forEach(task_item => {
+            const taskContent = task_item.textContent.toLowerCase();
+            task_item.style.display = taskContent.includes(filterText) ? 'block' : 'none';
+        });
+    });
+    
 }
 
 function selectTask(task_id) {

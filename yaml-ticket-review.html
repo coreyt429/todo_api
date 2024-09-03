@@ -3,25 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tab-delimited to YAML Converter</title>
+    <title>Ticket Review Tool</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <!-- todo CSS -->
+    <link href="static/css/todo.css" rel="stylesheet">
+    <!--  Ace Editor JS-->
+    <script src="https://cdn.jsdelivr.net/npm/ace-builds@1/src-min-noconflict/ace.min.js"></script>
+    <!-- YAML JS-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="mb-4">Tab-delimited to YAML Converter</h1>
+        <h1 class="mb-4">Ticket Review Tool</h1>
         <div class="mb-3">
             <label for="inputText" class="form-label">Paste your tab-delimited text here:</label>
             <textarea class="form-control" id="inputText" rows="10"></textarea>
         </div>
         <button class="btn btn-primary" onclick="convertToYAML()">Convert to YAML</button>
-        <div class="mt-3">
-            <label for="outputYAML" class="form-label">YAML Output:</label>
-            <textarea class="form-control" id="outputYAML" rows="15" readonly></textarea>
+        <div class="mt-3" id="outputYAML">
         </div>
     </div>
 
     <script>
+        let editor;
+        let editor_theme = 'ace/theme/github_dark';
         function preprocessHeader(header) {
             const fieldNames = ['Owner', 'Ticket Number', 'Status', 'Subject'];
             for (const fieldName of fieldNames) {
@@ -33,7 +38,7 @@
         }
 
         function isValidOwner(owner) {
-            const validOwners = ["Voice Operations", "Data Admin", "Thornburg, Corey"];
+            const validOwners = ["Voice Operations", "Voice Engineering", "Data Admin", "Thornburg, Corey", "Corey Thornburg"];
             return validOwners.includes(owner);
         }
 
@@ -54,7 +59,8 @@
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split('\t');
                 const owner = values[headers.indexOf('Owner')];
-                const ticketNumber = values[headers.indexOf('Ticket Number')];
+                const ticketNumber = parseInt(values[headers.indexOf('Ticket Number')]);
+                console.log(ticketNumber)
                 const subject = values[headers.indexOf('Subject')];
                 
                 // Check if the owner is valid and the subject is not to be ignored
@@ -71,8 +77,23 @@
                 }
             }
             
+            function renderEditor(yaml_string) {
+                const container = document.getElementById('outputYAML');
+                container.innerHTML = ''; // Clear previous content
+
+                const editorDiv = document.createElement('div');
+                editorDiv.id = 'aceEditor';
+                editorDiv.style.height = '500px';
+                editorDiv.style.width = '100%';
+                container.appendChild(editorDiv);
+
+                editor = ace.edit(editorDiv.id);
+                editor.setTheme(editor_theme); // Optional: set a theme
+                editor.setValue(yaml_string);
+            }
+
             const yaml = jsyaml.dump(data, { indent: 4 });
-            document.getElementById('outputYAML').value = yaml;
+            renderEditor(yaml)
         }
     </script>
 </body>
