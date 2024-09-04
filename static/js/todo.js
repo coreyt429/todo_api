@@ -462,6 +462,7 @@ function setBreadCrumbs(hint) {
 function newTask(parent){
     console.log('newTask('+parent+')')
     const date = new Date();
+    date.setHours(17, 0, 0, 0);
     let task = {
         "name": "New Task",
         "type": "task",

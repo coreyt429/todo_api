@@ -54,7 +54,8 @@
             // Preprocess headers
             const headers = rawHeaders.map(preprocessHeader);
             
-            const data = {};
+             
+            const data = {"tickets": {}};
             
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split('\t');
@@ -65,11 +66,11 @@
                 
                 // Check if the owner is valid and the subject is not to be ignored
                 if (isValidOwner(owner) && isValidSubject(subject)) {
-                    if (!data[owner]) {
-                        data[owner] = {};
+                    if (!data['tickets'][owner]) {
+                        data['tickets'][owner] = {};
                     }
                     
-                    data[owner][ticketNumber] = {
+                    data['tickets'][owner][ticketNumber] = {
                         status: values[headers.indexOf('Status')],
                         description: subject,
                         disposition: 'not_reviewed'
