@@ -341,6 +341,18 @@ def apply_template_defaults(template):
 
     return template
 
+@app.route('/backup', methods=['GET'])
+@token_required
+def handle_backup():
+    backup = {}
+    with get_db(db='template') as db:
+        # Get all templates if no template_id is provided
+        backup['templates'] = db.all()
+    with get_db() as db:
+        # Get all templates if no template_id is provided
+        backup['tasks'] = db.all()
+    return jsonify(backup)
+
 
 @app.route('/template', methods=['GET', 'POST'])
 @app.route('/template/<string:template_id>', methods=['GET', 'PUT', 'POST', 'DELETE'])
