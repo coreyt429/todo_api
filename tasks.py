@@ -5,6 +5,7 @@ import json
 import requests
 from copy import deepcopy
 from datetime import datetime, timezone, timedelta, time
+from dateutil import parser
 import pytz
 from zoneinfo import ZoneInfo
 from tzlocal import get_localzone_name
@@ -58,7 +59,7 @@ class Task:
     
     def normalize_to_local_timezone(self, iso_timestamp):
         # Parse the ISO 8601 timestamp to a datetime object
-        utc_dt = datetime.fromisoformat(iso_timestamp)
+        utc_dt = parser.isoparse(iso_timestamp)
 
         # Ensure the datetime object is aware (i.e., it has timezone info)
         if utc_dt.tzinfo is None:
@@ -179,9 +180,10 @@ class TaskList:
 
     def is_valid_iso_timestamp(self, timestamp_str):
         try:
-            datetime.fromisoformat(timestamp_str)
+            parser.isoparse(timestamp_str)
             return True
-        except ValueError:
+        except ValueError as e:
+            # print(f"Error: {e} - {timestamp_str}")
             return False
     
     def is_current_day(self, timestamp):
@@ -229,7 +231,7 @@ class TaskList:
                 for task in self.tasks:
                     timestamp_str = task.data.get('timestamps', {}).get('due', None)
                     if self.is_valid_iso_timestamp(timestamp_str):
-                        timestamp = datetime.fromisoformat(timestamp_str)
+                        timestamp = parser.isoparse(timestamp_str)
                         if self.is_current_day(timestamp):
                             current_tasks_list.append(task)
                 return self.trim_completed(current_tasks_list)
@@ -238,7 +240,7 @@ class TaskList:
                 for task in self.tasks:
                     timestamp_str = task.data.get('timestamps', {}).get('due', None)
                     if self.is_valid_iso_timestamp(timestamp_str):
-                        timestamp = datetime.fromisoformat(timestamp_str)
+                        timestamp = parser.isoparse(timestamp_str)
                         if self.is_current_week(timestamp):
                             current_tasks_list.append(task)
                 return self.trim_completed(current_tasks_list)
@@ -247,7 +249,7 @@ class TaskList:
                 for task in self.tasks:
                     timestamp_str = task.data.get('timestamps', {}).get('due', None)
                     if self.is_valid_iso_timestamp(timestamp_str):
-                        timestamp = datetime.fromisoformat(timestamp_str)
+                        timestamp = parser.isoparse(timestamp_str)
                         if self.is_current_month(timestamp):
                             current_tasks_list.append(task)
                 return self.trim_completed(current_tasks_list)
@@ -256,7 +258,7 @@ class TaskList:
                 for task in self.tasks:
                     timestamp_str = task.data.get('timestamps', {}).get('due', None)
                     if self.is_valid_iso_timestamp(timestamp_str):
-                        timestamp = datetime.fromisoformat(timestamp_str)
+                        timestamp = parser.isoparse(timestamp_str)
                         if self.is_current_quarter(timestamp):
                             current_tasks_list.append(task)
                 return self.trim_completed(current_tasks_list)            
