@@ -161,6 +161,15 @@ function listTemplates() {
     });
 }
 
+function task_history(current_task){
+    const history_tree = []
+    while (current_task) {
+        history_tree.unshift(current_task);
+        current_task = task_list.find(t => t.task_id === current_task.parent);
+    }
+    return history_tree
+}
+
 // Function to render tasks
 function renderTasks(tasks) {
     const taskListContainer = document.getElementById('taskListContainer');
@@ -172,15 +181,8 @@ function renderTasks(tasks) {
         taskElement.id = task.task_id
         taskElement.className = `task-item task-priority-${task.priority}`;
         taskElement.dataset.task = JSON.stringify(task)
-        current_task = task
-        history_tree = []
         taskElement.dataset.history = ''
-        while (current_task) {
-            history_tree.unshift(current_task);
-            current_task = task_list.find(t => t.task_id === current_task.parent);
-            console.log(current_task)
-        }
-        console.log(history_tree)
+        const history_tree = task_history(task)
         history_tree.forEach(current_task => { taskElement.dataset.history += `${current_task.name} |`})
         // Parse the ISO timestamp
         const dueDate = new Date(task.timestamps.due);
