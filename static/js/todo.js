@@ -141,7 +141,6 @@ function listTemplates() {
         template.notes = template.notes || '';
         const taskElement = document.createElement('div');
         taskElement.className = `task-item task-priority-${template.priority}`;
-
         // taskContainer
         const taskContainer = document.createElement('div');
         taskContainer.className = 'd-flex justify-content-between align-items-center';
@@ -170,8 +169,19 @@ function renderTasks(tasks) {
         task.priority = task.priority || 'low';
         task.notes = task.notes || '';
         const taskElement = document.createElement('div');
+        taskElement.id = task.task_id
         taskElement.className = `task-item task-priority-${task.priority}`;
-
+        taskElement.dataset.task = JSON.stringify(task)
+        current_task = task
+        history_tree = []
+        taskElement.dataset.history = ''
+        while (current_task) {
+            history_tree.unshift(current_task);
+            current_task = task_list.find(t => t.task_id === current_task.parent);
+            console.log(current_task)
+        }
+        console.log(history_tree)
+        history_tree.forEach(current_task => { taskElement.dataset.history += `${current_task.name} |`})
         // Parse the ISO timestamp
         const dueDate = new Date(task.timestamps.due);
 
@@ -352,7 +362,8 @@ function filterTasks(category) {
         const filterText = this.value.toLowerCase();
         const task_items = document.getElementsByClassName('task-item');
         Array.from(task_items).forEach(task_item => {
-            const taskContent = task_item.textContent.toLowerCase();
+            const taskContent = task_item.textContent.toLowerCase() + task_item.dataset.task + task_item.dataset.history;
+
             task_item.style.display = taskContent.includes(filterText) ? 'block' : 'none';
         });
     });
@@ -417,7 +428,6 @@ function setBreadCrumbs(hint) {
             });
             breadcrumbContainer.appendChild(breadcrumbItem);
         }
-
     
         // Build the breadcrumb chain from the selected task up to the root
         let task = task_list.find(t => t.task_id === hint);
