@@ -162,8 +162,6 @@ function listTemplates() {
     });
 }
 
-
-
 function task_history(current_task){
     const history_tree = []
     while (current_task) {
@@ -173,14 +171,144 @@ function task_history(current_task){
     return history_tree
 }
 
-function do_review(){
-    console.log("Lets review tasks!")
+function do_review(task_id = null, action = null) {
+    let task;
+    let index = 0;
     const taskListContainer = document.getElementById('taskListContainer');
-    taskListContainer.innerHTML = ""
-    console.log(category)
-    console.log(filteredTasks)
 
+    if (!filteredTasks || filteredTasks.length === 0) {
+        const noTasksMessage = document.createElement('h2');
+        noTasksMessage.textContent = "No tasks to review.";
+        noTasksMessage.classList.add('text-center', 'mt-5', 'text-warning');
+        taskListContainer.innerHTML = ""; // Clear previous content
+        taskListContainer.appendChild(noTasksMessage);
+        return;
+    }
+
+    if (task_id != null) {
+        index = filteredTasks.findIndex(t => t.task_id === task_id);
+        if (index !== -1) {
+            task = filteredTasks[index];
+            console.log("Process task at index " + index);
+
+            if (action === 'Next') {
+                index += 1; // Update the index
+            } else if (action === 'Edit') {
+                renderTaskDetail(task);
+                return;
+            } else if (['Today', 'Tomorrow', 'Next Week', 'Next Month'].includes(action)) {
+                // Time-based actions
+                const actionToDueDate = {
+                    'Today': () => {
+                        let date = new Date();
+                        date.setHours(17, 0, 0, 0);
+                        return date;
+                    },
+                    'Tomorrow': () => {
+                        let date = new Date();
+                        date.setDate(date.getDate() + 1);
+                        date.setHours(17, 0, 0, 0);
+                        return date;
+                    },
+                    'Next Week': () => {
+                        let date = new Date();
+                        let dayOfWeek = date.getDay();
+                        let daysUntilNextMonday = (8 - dayOfWeek) % 7 || 7;
+                        date.setDate(date.getDate() + daysUntilNextMonday);
+                        date.setHours(17, 0, 0, 0);
+                        return date;
+                    },
+                    'Next Month': () => {
+                        let date = new Date();
+                        date.setMonth(date.getMonth() + 1, 1);
+                        date.setHours(17, 0, 0, 0);
+                        return date;
+                    }
+                };
+
+                let dueDate = actionToDueDate[action]();
+
+                if (!task.timestamps) {
+                    task.timestamps = {};
+                }
+
+                task.timestamps.due = dueDate.toISOString();
+
+                update_task(task);
+                index += 1;
+            } else {
+                // Handle unrecognized actions
+                console.log(`Unrecognized action: ${action}`);
+                return;
+            }
+        } else {
+            console.log("Task not found");
+            return;
+        }
+        console.log("Process " + task_id);
+    } else {
+        // If task_id is null, start with the first task
+        task = filteredTasks[0];
+        index = 0;
+    }
+
+    if (index >= filteredTasks.length) {
+        const completionMessage = document.createElement('h2');
+        completionMessage.textContent = "Review Complete!";
+        completionMessage.classList.add('text-center', 'mt-5', 'text-success');
+        taskListContainer.innerHTML = ""; // Clear previous content
+        taskListContainer.appendChild(completionMessage);
+        return;
+    }
+
+    task = filteredTasks[index];
+   
+
+    // Clear any previous editor
+    const editor_container = document.getElementById('taskDetailsContainer');
+    editor_container.innerHTML = '';
+
+    // Clear previous content
+    taskListContainer.innerHTML = "";
+
+    // Create the heading
+    const heading = document.createElement('h2');
+    heading.textContent = "Review " + category + " tasks";
+    taskListContainer.appendChild(heading);
+
+    // Append the rendered task
+    taskListContainer.appendChild(render_task(task));
+
+    // Create a container for the buttons
+    const buttonContainer = document.createElement('div');
+    buttonContainer.classList.add('btn-toolbar', 'mt-3');
+
+    // Button labels
+    const buttonLabels = ['Next', 'Today', 'Tomorrow', 'Next Week', 'Next Month', 'Edit'];
+
+    // Create and append buttons
+    buttonLabels.forEach(label => {
+        const button = document.createElement('button');
+        button.classList.add('btn', 'btn-primary', 'me-2');
+        button.textContent = label;
+
+        // Add event listeners to buttons
+        button.addEventListener('click', () => {
+            console.log(`${label} button clicked`);
+            do_review(task.task_id, label);
+        });
+
+        buttonContainer.appendChild(button);
+    });
+
+    // Append the button container to the taskListContainer
+    taskListContainer.appendChild(buttonContainer);
+
+    console.log(filteredTasks);
 }
+
+
+
 
 function render_task(task){
     const taskElement = document.createElement('div');
