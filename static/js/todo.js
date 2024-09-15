@@ -1,6 +1,7 @@
 let AUTH_TOKEN = '';
 let first_load = true
 let task_list = [];
+let filteredTasks = [];
 let last_task_id = 'default_id';
 let categories = [
     'Today',
@@ -161,6 +162,8 @@ function listTemplates() {
     });
 }
 
+
+
 function task_history(current_task){
     const history_tree = []
     while (current_task) {
@@ -170,6 +173,94 @@ function task_history(current_task){
     return history_tree
 }
 
+function do_review(){
+    console.log("Lets review tasks!")
+    const taskListContainer = document.getElementById('taskListContainer');
+    taskListContainer.innerHTML = ""
+    console.log(category)
+    console.log(filteredTasks)
+
+}
+
+function render_task(task){
+    const taskElement = document.createElement('div');
+    taskElement.id = task.task_id
+    taskElement.className = `task-item task-priority-${task.priority}`;
+    taskElement.dataset.task = JSON.stringify(task)
+    taskElement.dataset.history = ''
+    const history_tree = task_history(task)
+    history_tree.forEach(current_task => { taskElement.dataset.history += `${current_task.name} |`})
+    
+    // Parse the ISO timestamp
+    const dueDate = new Date(task.timestamps.due);
+
+    // Get current date information
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+
+    // Determine relative day and format time
+    let formattedDate = '';
+    if (dueDate.toDateString() === now.toDateString()) {
+        formattedDate = `Today ${dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else if (dueDate.toDateString() === tomorrow.toDateString()) {
+        formattedDate = `Tomorrow ${dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else {
+        formattedDate = `${dueDate.getMonth() + 1}/${dueDate.getDate()} ${dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+    // taskContainer
+    const taskContainer = document.createElement('div');
+    taskContainer.className = 'd-flex justify-content-between align-items-center';
+    // taskLabel
+    const taskLabelContainer = document.createElement('div');
+    const taskLabelH5 = document.createElement('h5');
+    const taskLabelA = document.createElement('a');
+    taskLabelA.onclick = function() {
+        selectTask(task.task_id);
+    };
+    taskLabelA.textContent = task.name;
+    taskLabelH5.appendChild(taskLabelA);
+    taskLabelContainer.appendChild(taskLabelH5);
+
+    // childTasks
+    let children = task_list.filter(child_task => child_task.parent === task.task_id);
+    if(!show_completed){
+        children = children.filter(child_task => child_task.status !== 'completed');
+    }
+    const taskChildren = document.createElement('p');
+    taskChildren.textContent = `${children.length} subtasks`;
+    const taskChildrenAnchor = document.createElement('a');
+    taskChildrenAnchor.onclick = function(){
+        console.log('taskChildrenAnchor.onclick');
+        console.log("task_id: " + task.task_id);
+        //category = task.task_id;
+        console.log("category: " + category);
+        filterTasks(task.task_id);
+    }
+    taskChildrenAnchor.appendChild(taskChildren);
+    taskLabelContainer.appendChild(taskChildrenAnchor);
+    taskContainer.appendChild(taskLabelContainer);
+
+    // taskDate
+    const taskDateContainer = document.createElement('div');
+    taskDateContainer.className = 'ms-auto';
+    const dateElement = document.createElement('p');
+    dateElement.className = 'mb-0';
+    dateElement.textContent = formattedDate;
+    taskDateContainer.appendChild(dateElement);
+
+    // taskStatus
+    const statusElement = document.createElement('p');
+    statusElement.className = 'mb-0';
+    statusElement.textContent = task.status;
+    taskDateContainer.appendChild(statusElement);
+    taskContainer.appendChild(taskDateContainer)
+    
+    
+    taskElement.appendChild(taskContainer)
+    return taskElement
+}
+
 // Function to render tasks
 function renderTasks(tasks) {
     const taskListContainer = document.getElementById('taskListContainer');
@@ -177,89 +268,7 @@ function renderTasks(tasks) {
         // Set default priority if it doesn't exist
         task.priority = task.priority || 'low';
         task.notes = task.notes || '';
-        const taskElement = document.createElement('div');
-        taskElement.id = task.task_id
-        taskElement.className = `task-item task-priority-${task.priority}`;
-        taskElement.dataset.task = JSON.stringify(task)
-        taskElement.dataset.history = ''
-        const history_tree = task_history(task)
-        history_tree.forEach(current_task => { taskElement.dataset.history += `${current_task.name} |`})
-        // Parse the ISO timestamp
-        const dueDate = new Date(task.timestamps.due);
-
-        // Get current date information
-        const now = new Date();
-        const tomorrow = new Date(now);
-        tomorrow.setDate(now.getDate() + 1);
-
-        // Determine relative day and format time
-        let formattedDate = '';
-        if (dueDate.toDateString() === now.toDateString()) {
-            formattedDate = `Today ${dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-        } else if (dueDate.toDateString() === tomorrow.toDateString()) {
-            formattedDate = `Tomorrow ${dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-        } else {
-            formattedDate = `${dueDate.getMonth() + 1}/${dueDate.getDate()} ${dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-        }
-        // taskContainer
-        const taskContainer = document.createElement('div');
-        taskContainer.className = 'd-flex justify-content-between align-items-center';
-        // taskLabel
-        const taskLabelContainer = document.createElement('div');
-        const taskLabelH5 = document.createElement('h5');
-        const taskLabelA = document.createElement('a');
-        taskLabelA.onclick = function() {
-            selectTask(task.task_id);
-        };
-        taskLabelA.textContent = task.name;
-        taskLabelH5.appendChild(taskLabelA);
-        taskLabelContainer.appendChild(taskLabelH5);
-
-        /*
-        // taskNotes
-        const taskLabelNotes = document.createElement('p');
-        taskLabelNotes.className = 'mb-0';
-        taskLabelNotes.textContent = task.notes
-        taskLabelContainer.appendChild(taskLabelNotes)
-        */
-
-        // childTasks
-        let children = task_list.filter(child_task => child_task.parent === task.task_id);
-        if(!show_completed){
-            children = children.filter(child_task => child_task.status !== 'completed');
-        }
-        const taskChildren = document.createElement('p');
-        taskChildren.textContent = `${children.length} subtasks`;
-        const taskChildrenAnchor = document.createElement('a');
-        taskChildrenAnchor.onclick = function(){
-            console.log('taskChildrenAnchor.onclick');
-            console.log("task_id: " + task.task_id);
-            //category = task.task_id;
-            console.log("category: " + category);
-            filterTasks(task.task_id);
-        }
-        taskChildrenAnchor.appendChild(taskChildren);
-        taskLabelContainer.appendChild(taskChildrenAnchor);
-        taskContainer.appendChild(taskLabelContainer);
-
-        // taskDate
-        const taskDateContainer = document.createElement('div');
-        taskDateContainer.className = 'ms-auto';
-        const dateElement = document.createElement('p');
-        dateElement.className = 'mb-0';
-        dateElement.textContent = formattedDate;
-        taskDateContainer.appendChild(dateElement);
-
-        // taskStatus
-        const statusElement = document.createElement('p');
-        statusElement.className = 'mb-0';
-        statusElement.textContent = task.status;
-        taskDateContainer.appendChild(statusElement);
-        taskContainer.appendChild(taskDateContainer)
-        
-        
-        taskElement.appendChild(taskContainer)
-        taskListContainer.appendChild(taskElement);
+        taskListContainer.appendChild(render_task(task));
     });
 }
 
@@ -286,8 +295,7 @@ function filterTasks(category) {
     taskListContainer.appendChild(filterInputContainer);
 
     console.log(category);
-    let filteredTasks = task_list; // Declare filteredTasks in the outer scope
-
+    filteredTasks = task_list; 
     // Apply category filter
     if (category === 'Tasks') {
         filteredTasks = task_list.filter(task => task.type.trim().toLowerCase() === 'task');
