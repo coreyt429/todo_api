@@ -284,7 +284,7 @@ function do_review(task_id = null, action = null) {
     buttonContainer.classList.add('btn-toolbar', 'mt-3');
 
     // Button labels
-    const buttonLabels = ['Next', 'Today', 'Tomorrow', 'Next Week', 'Next Month', 'Edit'];
+    const buttonLabels = ['Next', 'Edit', 'Today', 'Tomorrow', 'Next Week', 'Next Month'];
 
     // Create and append buttons
     buttonLabels.forEach(label => {
