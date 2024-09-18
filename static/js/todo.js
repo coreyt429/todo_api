@@ -58,23 +58,6 @@ function hideStatus() {
     statusProgress.classList.remove('progress-bar-striped', 'progress-bar-animated');
 }
 
-// Example usage in your existing JavaScript functions
-async function load_tasks(callback) {
-    showStatus('Loading tasks...', 0);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    showStatus('Processing tasks...', 50);
-    // Simulate processing
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    showStatus('Rendering tasks...', 75);
-    // Simulate rendering
-    await new Promise(resolve => setTimeout(resolve, 500));
-    hideStatus();
-    // Your existing code to actually load and display tasks
-    if (callback) callback();
-}
-
-
 function toggleShowCompleted() {
   show_completed = !show_completed;
 }
