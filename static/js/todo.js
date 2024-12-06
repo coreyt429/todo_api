@@ -734,7 +734,7 @@ function renderTaskEditor(task) {
         alertDiv.classList = 'alert alert-warning'
         alertDiv.innerHTML = "Unsaved changes"
     });
-    editorDiv.scrollIntoView({ behavior: "smooth" });
+    editorDiv.scrollIntoView({ behavior: "smooth", block: "center"});
 }
 
 function renderTaskJSON(task) {
