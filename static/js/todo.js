@@ -679,6 +679,8 @@ function renderTaskDetail(task){
         }
     }
     document.getElementById('taskDetailsContainer').style.display = 'block';
+    document.getElementById('taskDetailsContainer').scrollIntoView({ behavior: "smooth" });
+
 }
 
 function renderTaskEditor(task) {
@@ -732,6 +734,7 @@ function renderTaskEditor(task) {
         alertDiv.classList = 'alert alert-warning'
         alertDiv.innerHTML = "Unsaved changes"
     });
+    editorDiv.scrollIntoView({ behavior: "smooth" });
 }
 
 function renderTaskJSON(task) {
