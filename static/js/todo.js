@@ -33,7 +33,29 @@ editor_theme = 'ace/theme/github_dark';
 
 checkStoredAuthToken()
 
+// Add JavaScript for managing the status bar
+const statusBar = document.getElementById('statusBar');
+const statusMessage = document.getElementById('statusMessage');
+const statusProgress = document.getElementById('statusProgress');
 
+function showStatus(message, progress = -1) {
+    statusBar.style.display = 'block';
+    statusMessage.textContent = message;
+    if (progress >= 0 && progress <= 100) {
+        statusProgress.style.width = `${progress}%`;
+        statusProgress.setAttribute('aria-valuenow', progress);
+    } else {
+        statusProgress.style.width = '100%';
+        statusProgress.classList.add('progress-bar-striped', 'progress-bar-animated');
+    }
+}
+
+function hideStatus() {
+    statusBar.style.display = 'none';
+    statusProgress.style.width = '0%';
+    statusProgress.setAttribute('aria-valuenow', 0);
+    statusProgress.classList.remove('progress-bar-striped', 'progress-bar-animated');
+}
 
 function toggleShowCompleted() {
   show_completed = !show_completed;
@@ -258,11 +280,12 @@ function do_review(task_id = null, action = null) {
         completionMessage.classList.add('text-center', 'mt-5', 'text-success');
         taskListContainer.innerHTML = ""; // Clear previous content
         taskListContainer.appendChild(completionMessage);
+        showStatus("Review Complete")
         return;
     }
 
     task = filteredTasks[index];
-   
+    showStatus("Task Review "+(index+1)+" of "+filteredTasks.length, (index+1)/filteredTasks.length)
 
     // Clear any previous editor
     const editor_container = document.getElementById('taskDetailsContainer');
@@ -1001,6 +1024,7 @@ function saveTask(taskId) {
     });
 
     console.log(updatedTask, taskId);
+    showStatus("Saving Task: "+updatedTask.name, 0)
     // Call update_task to handle saving the task
     update_task(updatedTask, saveTaskCallback);
 }
@@ -1008,12 +1032,15 @@ function saveTask(taskId) {
 function save_yaml(){
     var editorContent = editor.getValue();
     var yamlObject = jsyaml.load(editorContent);
+    showStatus("Saving Task: "+yamlObject.name, 0)
     update_task(yamlObject)
 }
 
 function save_json(){
+    // FIXME: Why is this just like save_yaml?
     var editorContent = editor.getValue();
     var yamlObject = jsyaml.load(editorContent);
+    showStatus("Saving Task: "+yamlObject.name, 0)
     update_task(yamlObject)
 }
 
