@@ -341,15 +341,20 @@ function render_task(task){
     taskElement.dataset.task = JSON.stringify(task)
     taskElement.dataset.history = ''
     const history_tree = task_history(task)
-    history_tree.forEach(current_task => { taskElement.dataset.history += `${current_task.name} |`})
+    history_tree.forEach(current_task => { 
+        console.log(`Adding to history: ${current_task.name}`);
+        taskElement.dataset.history += `${current_task.name} |`
+    })
     
     // Parse the ISO timestamp
     const dueDate = new Date(task.timestamps.due);
+    console.log(`Due date parsed: ${dueDate}`);
 
     // Get current date information
     const now = new Date();
     const tomorrow = new Date(now);
     tomorrow.setDate(now.getDate() + 1);
+    console.log(`Current date: ${now}, Tomorrow: ${tomorrow}`);
 
     // Determine relative day and format time
     let formattedDate = '';
@@ -360,6 +365,8 @@ function render_task(task){
     } else {
         formattedDate = `${dueDate.getMonth() + 1}/${dueDate.getDate()} ${dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     }
+    console.log(`Formatted date: ${formattedDate}`);
+
     // taskContainer
     const taskContainer = document.createElement('div');
     taskContainer.className = 'd-flex justify-content-between align-items-center';
@@ -376,8 +383,10 @@ function render_task(task){
 
     // childTasks
     let children = task_list.filter(child_task => child_task.parent === task.task_id);
+    console.log(`Found ${children.length} children for task ${task.task_id}`);
     if(!show_completed){
         children = children.filter(child_task => child_task.status !== 'completed');
+        console.log(`Filtered children to ${children.length} (excluding completed)`);
     }
     const taskChildren = document.createElement('p');
     taskChildren.textContent = `${children.length} subtasks`;
@@ -408,8 +417,8 @@ function render_task(task){
     taskDateContainer.appendChild(statusElement);
     taskContainer.appendChild(taskDateContainer)
     
-    
     taskElement.appendChild(taskContainer)
+    console.log(`Task element created for task ${task.task_id}`);
     return taskElement
 }
 
@@ -423,6 +432,7 @@ function renderTasks(tasks) {
         task.notes = task.notes || '';
         console.log(JSON.stringify(task))
         taskListContainer.appendChild(render_task(task));
+        console.log("task rendered")
     });
 }
 
