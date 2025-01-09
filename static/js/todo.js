@@ -1121,7 +1121,7 @@ function editor_save_callback(response){
 function updateTasksFromTemplates(callback) {
     const today = new Date();
     today.setHours(0, 0, 0, 0)
-    // temp short cuircuite until I fix the current templates:
+    // temp short cuircuit until I fix the current templates:
     first_load = false
     //callback()
     template_list.forEach(template => {
@@ -1138,7 +1138,7 @@ function updateTasksFromTemplates(callback) {
                     due.setHours(0, 0, 0, 0)
                     console.log("Due: "+due.getTime())
                     console.log("Today: "+today.getTime())
-                    console.log("Equael? " + (due.getTime() === today.getTime()))
+                    console.log("Equal? " + (due.getTime() === today.getTime()))
                     if(due.getTime() === today.getTime()){
                         existingTask = true
                     }
@@ -1167,7 +1167,7 @@ function updateTasksFromTemplates(callback) {
                 update_task(new_task)
             }
         }
-        });
+    });
     
     console.log(task_list)
     callback()
