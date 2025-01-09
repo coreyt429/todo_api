@@ -334,17 +334,25 @@ function do_review(task_id = null, action = null) {
 
 
 function render_task(task){
-    console.log(`render_task(${JSON.stringify(task)})`)
+    console.log(`render_task0(${JSON.stringify(task)})`)
     const taskElement = document.createElement('div');
+    console.log("debug 1");
     taskElement.id = task.task_id
+    console.log("debug 2");
     taskElement.className = `task-item task-priority-${task.priority}`;
-    taskElement.dataset.task = JSON.stringify(task)
-    taskElement.dataset.history = ''
+    console.log("debug 3");
+    taskElement.dataset.task = JSON.stringify(task);
+    console.log("debug 4");
+    taskElement.dataset.history = '';
+    console.log("debug 5");
     const history_tree = task_history(task)
+    console.log("debug 6");
     history_tree.forEach(current_task => { 
+        console.log("debug 7");
         console.log(`Adding to history: ${current_task.name}`);
         taskElement.dataset.history += `${current_task.name} |`
     })
+    console.log("debug 8");
     
     // Parse the ISO timestamp
     const dueDate = new Date(task.timestamps.due);
