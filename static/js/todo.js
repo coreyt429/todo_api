@@ -334,6 +334,7 @@ function do_review(task_id = null, action = null) {
 
 
 function render_task(task){
+    console.log(`render_task(${JSON.stringify(task)})`)
     const taskElement = document.createElement('div');
     taskElement.id = task.task_id
     taskElement.className = `task-item task-priority-${task.priority}`;
@@ -414,12 +415,13 @@ function render_task(task){
 
 // Function to render tasks
 function renderTasks(tasks) {
-    console.log("renderTasks(" + tasks + ")");
+    console.log("renderTasks(" + tasks.length + ")");
     const taskListContainer = document.getElementById('taskListContainer');
     tasks.forEach(task => {
         // Set default priority if it doesn't exist
         task.priority = task.priority || 'low';
         task.notes = task.notes || '';
+        console.log(JSON.stringify(task))
         taskListContainer.appendChild(render_task(task));
     });
 }
