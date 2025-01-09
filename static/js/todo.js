@@ -414,6 +414,7 @@ function render_task(task){
 
 // Function to render tasks
 function renderTasks(tasks) {
+    console.log("renderTasks(" + tasks + ")");
     const taskListContainer = document.getElementById('taskListContainer');
     tasks.forEach(task => {
         // Set default priority if it doesn't exist
