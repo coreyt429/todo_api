@@ -187,10 +187,12 @@ function listTemplates() {
 function task_history(current_task){
     console.log(`task_history(${JSON.stringify(current_task)})`)
     const history_tree = [];
+    const visited_tasks = new Set();
     console.log("history_tree: " + history_tree);
-    while (current_task) {
+    while (current_task && !visited_tasks.has(current_task.task_id)) {
         console.log("history_tree: " + history_tree);
         history_tree.unshift(current_task);
+        visited_tasks.add(current_task.task_id);
         console.log("history_tree unshifted: " + history_tree);
         console.log("finding parent: "+ current_task.parent);
         current_task = task_list.find(t => t.task_id === current_task.parent);
