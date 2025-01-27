@@ -401,7 +401,7 @@ function render_task(task){
     let children = task_list.filter(child_task => child_task.parent === task.task_id);
     console.log(`Found ${children.length} children for task ${task.task_id}`);
     if(!show_completed){
-        children = children.filter(child_task => child_task.status !== 'completed');
+        children = children.filter(child_task => !['completed', 'skipped', 'cancelled'].includes(child_task.status));
         console.log(`Filtered children to ${children.length} (excluding completed)`);
     }
     const taskChildren = document.createElement('p');
@@ -514,7 +514,7 @@ function filterTasks(category) {
         });
     }
     if (!show_completed) {
-        filteredTasks = filteredTasks.filter(task => task.status !== 'completed');
+        filteredTasks = filteredTasks.filter(task => !['completed', 'skipped', 'cancelled'].includes(task.status));
     }
     
     update_counter(category, filteredTasks.length);
