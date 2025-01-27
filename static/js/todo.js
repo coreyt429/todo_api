@@ -385,7 +385,9 @@ function render_task(task){
     taskLabelA.onclick = function() {
         selectTask(task.task_id);
     };
-    taskLabelA.textContent = taskElement.dataset.history;
+    var task_name_label = taskElement.dataset.history
+    task_name_label = task_name_label.replace(/ \|/g, ' > ').replace(/ > $/, '');
+    taskLabelA.textContent = task_name_label;
     taskLabelH5.appendChild(taskLabelA);
     taskLabelContainer.appendChild(taskLabelH5);
 
