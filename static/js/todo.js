@@ -42,7 +42,7 @@ function my_trace(){
     stack = new Error().stack.split("\n");
     func = stack[2].split(" ")[5];
     caller = stack[3].split(" ")[5];
-    caller_line = stack[3].split(":")[1] + ":" + stack[3].split(":")[2];
+    caller_line = "https:" + stack[3].split(":")[1] + ":" + stack[3].split(":")[2];
     console.log("Function: " + func + " called by: " + caller + " at line: " + caller_line);
 }
 
@@ -474,26 +474,27 @@ function filterTasks(category, render = true) {
     my_trace();
     console.log('filterTasks(' + category + ')');
     console.log(`filterTasks(${category}, ${render})`)
-    const taskListContainer = document.getElementById('taskListContainer');
-    taskListContainer.innerHTML = ''; // Clear existing tasks
+    if(render){
+        const taskListContainer = document.getElementById('taskListContainer');
+        taskListContainer.innerHTML = ''; // Clear existing tasks
 
-    // Load BreadCrumbs
-    setBreadCrumbs(category);
-    // Clear detail form
-    const container = document.getElementById('taskDetailsContainer');
-    container.innerHTML = ''; // Clear previous content
-    
-    // Add text filter input
-    const filterInputContainer = document.createElement('div');
-    filterInputContainer.className = 'mb-3';
-    const filterInput = document.createElement('input');
-    filterInput.type = 'text';
-    filterInput.id = 'taskFilterInput';
-    filterInput.className = 'form-control';
-    filterInput.placeholder = 'Filter tasks...';
-    filterInputContainer.appendChild(filterInput);
-    taskListContainer.appendChild(filterInputContainer);
-
+        // Load BreadCrumbs
+        setBreadCrumbs(category);
+        // Clear detail form
+        const container = document.getElementById('taskDetailsContainer');
+        container.innerHTML = ''; // Clear previous content
+        
+        // Add text filter input
+        const filterInputContainer = document.createElement('div');
+        filterInputContainer.className = 'mb-3';
+        const filterInput = document.createElement('input');
+        filterInput.type = 'text';
+        filterInput.id = 'taskFilterInput';
+        filterInput.className = 'form-control';
+        filterInput.placeholder = 'Filter tasks...';
+        filterInputContainer.appendChild(filterInput);
+        taskListContainer.appendChild(filterInputContainer);
+    }
     console.log(category);
     filteredTasks = task_list; 
     // Apply category filter
