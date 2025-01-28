@@ -152,6 +152,7 @@ function update_counter(category, count){
 
 function update_counters(render = true){
     my_trace();
+    console.log(`update_counters(${render})`)
     categories.forEach(category => filterTasks(category, render))
 }
 
@@ -472,6 +473,7 @@ function renderTasks(tasks) {
 function filterTasks(category, render = true) {
     my_trace();
     console.log('filterTasks(' + category + ')');
+    console.log(`filterTasks(${category}, ${render})`)
     const taskListContainer = document.getElementById('taskListContainer');
     taskListContainer.innerHTML = ''; // Clear existing tasks
 
