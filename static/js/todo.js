@@ -1145,7 +1145,11 @@ function editor_save_callback(response){
     const alertDiv = document.getElementById('aceEditorAlert')
     alertDiv.classList = 'alert alert-success';
     alertDiv.innerHTML = response.message;
+    current_category = category;
     update_counters();
+    category = current_category;
+    filteredTasks = filterTasks(category);
+    renderTasks(filteredTasks);
 }
 
 function updateTasksFromTemplates(callback) {
