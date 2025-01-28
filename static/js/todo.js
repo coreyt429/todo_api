@@ -42,7 +42,7 @@ function my_trace(){
     stack = new Error().stack.split("\n");
     func = stack[2].split(" ")[5];
     caller = stack[3].split(" ")[5];
-    caller_line = stack[3].split(":")[1];
+    caller_line = stack[3].split(":")[1] + ":" + stack[3].split(":")[2];
     console.log("Function: " + func + " called by: " + caller + " at line: " + caller_line);
 }
 
@@ -1192,7 +1192,7 @@ function editor_save_callback(response) {
     current_category = category;
     update_counters(false);
     category = current_category;
-    filteredTasks = filterTasks(category);
+    filteredTasks = filterTasks(category, false);
     // renderTasks(filteredTasks);
 }
 
