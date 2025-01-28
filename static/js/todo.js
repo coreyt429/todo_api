@@ -460,6 +460,24 @@ function renderTasks(tasks) {
     my_trace();
     console.log("renderTasks(" + tasks.length + ")");
     const taskListContainer = document.getElementById('taskListContainer');
+    taskListContainer.innerHTML = ''; // Clear existing tasks
+
+    // Load BreadCrumbs
+    setBreadCrumbs(category);
+    // Clear detail form
+    const taskDetailsContainer = document.getElementById('taskDetailsContainer');
+    taskDetailsContainer.innerHTML = ''; // Clear previous content
+    
+    // Add text filter input
+    const filterInputContainer = document.createElement('div');
+    filterInputContainer.className = 'mb-3';
+    const filterInput = document.createElement('input');
+    filterInput.type = 'text';
+    filterInput.id = 'taskFilterInput';
+    filterInput.className = 'form-control';
+    filterInput.placeholder = 'Filter tasks...';
+    filterInputContainer.appendChild(filterInput);
+    taskListContainer.appendChild(filterInputContainer);
     tasks.forEach(task => {
         // Set default priority if it doesn't exist
         task.priority = task.priority || 'low';
@@ -468,34 +486,21 @@ function renderTasks(tasks) {
         taskListContainer.appendChild(render_task(task));
         console.log("task rendered")
     });
+    // Add event listener for text filter
+    filterInput.addEventListener('input', function() {
+        const filterText = this.value.toLowerCase();
+        const task_items = document.getElementsByClassName('task-item');
+        Array.from(task_items).forEach(task_item => {
+            const taskContent = task_item.textContent.toLowerCase() + task_item.dataset.task + task_item.dataset.history;
+
+            task_item.style.display = taskContent.includes(filterText) ? 'block' : 'none';
+        });
+    });
 }
 
 function filterTasks(category, render = true) {
     my_trace();
-    console.log('filterTasks(' + category + ')');
     console.log(`filterTasks(${category}, ${render})`)
-    if(render){
-        const taskListContainer = document.getElementById('taskListContainer');
-        taskListContainer.innerHTML = ''; // Clear existing tasks
-
-        // Load BreadCrumbs
-        setBreadCrumbs(category);
-        // Clear detail form
-        const container = document.getElementById('taskDetailsContainer');
-        container.innerHTML = ''; // Clear previous content
-        
-        // Add text filter input
-        const filterInputContainer = document.createElement('div');
-        filterInputContainer.className = 'mb-3';
-        const filterInput = document.createElement('input');
-        filterInput.type = 'text';
-        filterInput.id = 'taskFilterInput';
-        filterInput.className = 'form-control';
-        filterInput.placeholder = 'Filter tasks...';
-        filterInputContainer.appendChild(filterInput);
-        taskListContainer.appendChild(filterInputContainer);
-    }
-    console.log(category);
     filteredTasks = task_list; 
     // Apply category filter
     if (category === 'Tasks') {
@@ -569,16 +574,6 @@ function filterTasks(category, render = true) {
     console.log('post_sort', filteredTasks);
     if(render){
         renderTasks(filteredTasks);
-        // Add event listener for text filter
-        filterInput.addEventListener('input', function() {
-            const filterText = this.value.toLowerCase();
-            const task_items = document.getElementsByClassName('task-item');
-            Array.from(task_items).forEach(task_item => {
-                const taskContent = task_item.textContent.toLowerCase() + task_item.dataset.task + task_item.dataset.history;
-
-                task_item.style.display = taskContent.includes(filterText) ? 'block' : 'none';
-            });
-        });
     }
 }
 
