@@ -1149,7 +1149,7 @@ function editor_save_callback(response){
     update_counters();
     category = current_category;
     filteredTasks = filterTasks(category);
-    renderTasks(filteredTasks);
+    // renderTasks(filteredTasks);
 }
 
 function updateTasksFromTemplates(callback) {
