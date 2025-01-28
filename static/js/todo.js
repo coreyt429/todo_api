@@ -150,9 +150,9 @@ function update_counter(category, count){
     }
 }
 
-function update_counters(){
+function update_counters(render = true){
     my_trace();
-    categories.forEach(category => filterTasks(category))
+    categories.forEach(category => filterTasks(category, render))
 }
 
 function listTemplates() {
@@ -469,7 +469,7 @@ function renderTasks(tasks) {
     });
 }
 
-function filterTasks(category) {
+function filterTasks(category, render = true) {
     my_trace();
     console.log('filterTasks(' + category + ')');
     const taskListContainer = document.getElementById('taskListContainer');
@@ -488,7 +488,7 @@ function filterTasks(category) {
     filterInput.type = 'text';
     filterInput.id = 'taskFilterInput';
     filterInput.className = 'form-control';
-    filterInput. placeholder = 'Filter tasks...';
+    filterInput.placeholder = 'Filter tasks...';
     filterInputContainer.appendChild(filterInput);
     taskListContainer.appendChild(filterInputContainer);
 
@@ -564,18 +564,19 @@ function filterTasks(category) {
         return 0;
     });
     console.log('post_sort', filteredTasks);
-    renderTasks(filteredTasks);
-    // Add event listener for text filter
-    filterInput.addEventListener('input', function() {
-        const filterText = this.value.toLowerCase();
-        const task_items = document.getElementsByClassName('task-item');
-        Array.from(task_items).forEach(task_item => {
-            const taskContent = task_item.textContent.toLowerCase() + task_item.dataset.task + task_item.dataset.history;
+    if(render){
+        renderTasks(filteredTasks);
+        // Add event listener for text filter
+        filterInput.addEventListener('input', function() {
+            const filterText = this.value.toLowerCase();
+            const task_items = document.getElementsByClassName('task-item');
+            Array.from(task_items).forEach(task_item => {
+                const taskContent = task_item.textContent.toLowerCase() + task_item.dataset.task + task_item.dataset.history;
 
-            task_item.style.display = taskContent.includes(filterText) ? 'block' : 'none';
+                task_item.style.display = taskContent.includes(filterText) ? 'block' : 'none';
+            });
         });
-    });
-    
+    }
 }
 
 function selectTask(task_id) {
@@ -1187,7 +1188,7 @@ function editor_save_callback(response) {
     alertDiv.classList = 'alert alert-success';
     alertDiv.innerHTML = response.message;
     current_category = category;
-    update_counters();
+    update_counters(false);
     category = current_category;
     filteredTasks = filterTasks(category);
     // renderTasks(filteredTasks);
