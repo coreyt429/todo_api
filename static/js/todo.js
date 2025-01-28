@@ -1132,6 +1132,12 @@ function editor_save(){
             // Your code to handle the unexpected case goes here
         }
     }
+    if (remaining_task.task_id) {
+        const index = task_list.findIndex(t => t.task_id === remaining_task.task_id);
+        if (index !== -1) {
+            task_list[index] = remaining_task;
+        }
+    }
     update_task(remaining_task, editor_save_callback)
 }
 
