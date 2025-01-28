@@ -38,7 +38,16 @@ const statusBar = document.getElementById('statusBar');
 const statusMessage = document.getElementById('statusMessage');
 const statusProgress = document.getElementById('statusProgress');
 
+function my_trace(){
+    stack = new Error().stack.split("\n");
+    func = stack[2].split(" ")[5];
+    caller = stack[3].split(" ")[5];
+    caller_line = stack[3].split(":")[1];
+    console.log("Function: " + func + " called by: " + caller + " at line: " + caller_line);
+}
+
 function showStatus(message, progress = -1) {
+    my_trace();
     statusBar.style.display = 'block';
     statusMessage.textContent = message;
     if (progress >= 0 && progress <= 100) {
@@ -51,6 +60,7 @@ function showStatus(message, progress = -1) {
 }
 
 function hideStatus() {
+    my_trace();
     statusBar.style.display = 'none';
     statusProgress.style.width = '0%';
     statusProgress.setAttribute('aria-valuenow', 0);
@@ -58,10 +68,12 @@ function hideStatus() {
 }
 
 function toggleShowCompleted() {
-  show_completed = !show_completed;
+    my_trace();
+    show_completed = !show_completed;
 }
 
 function setAuthToken() {
+    my_trace();
     const input = document.getElementById('authTokenInput');
     const errorMessage = document.getElementById('errorMessage');
     
@@ -79,6 +91,7 @@ function setAuthToken() {
 
 // Function to check if the AUTH_TOKEN is already stored and use it
 function checkStoredAuthToken() {
+    my_trace();
     const storedToken = localStorage.getItem('auth_token');
     if (storedToken) {
         AUTH_TOKEN = storedToken;
@@ -89,6 +102,7 @@ function checkStoredAuthToken() {
 }
 
 function load_tasks_callback(task_list){
+    my_trace();
     console.log("load_tasks_callback: " + category)
     save_category = category
     update_counters()
@@ -105,6 +119,7 @@ function load_tasks_callback(task_list){
 }
 
 function load_templates_callback(template_list){
+    my_trace();
     console.log("load_templates_callback: ")
     update_counter('templates', template_list.length)
     // Load the tasks for "Tasks" by default
@@ -118,10 +133,12 @@ function load_templates_callback(template_list){
 }
 
 function getCategoryCounterId(category) {
+    my_trace();
     return category.toLowerCase().replace(/\s+/g, '_') + '_count';
 }
 
 function update_counter(category, count){
+    my_trace();
     counter_id = getCategoryCounterId(category)
     console.log(category, counter_id, count)
     p_elem = document.getElementById(counter_id)
@@ -134,10 +151,12 @@ function update_counter(category, count){
 }
 
 function update_counters(){
+    my_trace();
     categories.forEach(category => filterTasks(category))
 }
 
 function listTemplates() {
+    my_trace();
     console.log('listTemplates()')
     // Load BreadCrumbs
     setBreadCrumbs(category)
@@ -185,6 +204,7 @@ function listTemplates() {
 }
 
 function task_history(current_task){
+    my_trace();
     console.log(`task_history(${JSON.stringify(current_task)})`)
     const history_tree = [];
     const visited_tasks = new Set();
@@ -202,6 +222,7 @@ function task_history(current_task){
 }
 
 function do_review(task_id = null, action = null) {
+    my_trace();
     let task;
     let index = 0;
     const taskListContainer = document.getElementById('taskListContainer');
@@ -342,6 +363,7 @@ function do_review(task_id = null, action = null) {
 
 
 function render_task(task){
+    my_trace();
     console.log(`render_task0(${JSON.stringify(task)})`)
     const taskElement = document.createElement('div');
     taskElement.id = task.task_id
@@ -434,6 +456,7 @@ function render_task(task){
 
 // Function to render tasks
 function renderTasks(tasks) {
+    my_trace();
     console.log("renderTasks(" + tasks.length + ")");
     const taskListContainer = document.getElementById('taskListContainer');
     tasks.forEach(task => {
@@ -447,6 +470,7 @@ function renderTasks(tasks) {
 }
 
 function filterTasks(category) {
+    my_trace();
     console.log('filterTasks(' + category + ')');
     const taskListContainer = document.getElementById('taskListContainer');
     taskListContainer.innerHTML = ''; // Clear existing tasks
@@ -555,6 +579,7 @@ function filterTasks(category) {
 }
 
 function selectTask(task_id) {
+    my_trace();
     console.log("selectTask("+task_id+")");
     console.log(task_id);
     console.log(task_list);
@@ -570,6 +595,7 @@ function selectTask(task_id) {
 }
 
 function setBreadCrumbs(hint) {
+    my_trace();
     console.log("setBreadCrumbs("+hint+")")
     if (!hint){return}
     const breadcrumbContainer = document.getElementById('breadcrumbContainer');
@@ -654,6 +680,7 @@ function setBreadCrumbs(hint) {
 }
 
 function newTask(parent){
+    my_trace();
     console.log('newTask('+parent+')')
     const date = new Date();
     date.setHours(17, 0, 0, 0);
@@ -681,6 +708,7 @@ function newTask(parent){
 }
 
 function renderTaskDetail(task){
+    my_trace();
     console.log("renderTaskDetail("+JSON.stringify(task)+")")
     if(task.task_id){
         task_id = task.task_id
@@ -707,6 +735,7 @@ function renderTaskDetail(task){
 }
 
 function renderTaskEditor(task) {
+    my_trace();
     console.log("renderTaskEditor("+JSON.stringify(task)+")")
     if(task.id){
         setBreadCrumbs(task.task_id);
@@ -761,6 +790,7 @@ function renderTaskEditor(task) {
 }
 
 function renderTaskJSON(task) {
+    my_trace();
     setBreadCrumbs(task.task_id);
     const container = document.getElementById('taskDetailsContainer');
     container.innerHTML = ''; // Clear previous content
@@ -788,6 +818,7 @@ function renderTaskJSON(task) {
 }
 
 function renderTaskYAML(task) {
+    my_trace();
     setBreadCrumbs(task.task_id);
     const container = document.getElementById('taskDetailsContainer');
     container.innerHTML = ''; // Clear previous content
@@ -818,6 +849,7 @@ function renderTaskYAML(task) {
 }
 
 function updateIsoTimestamp() {
+    my_trace();
     base = this.id.replace('.date','').replace('.time','')
     input_date = document.getElementById(base+'.date')
     input_time = document.getElementById(base+'.time')
@@ -828,6 +860,7 @@ function updateIsoTimestamp() {
 }
 
 function renderTaskForm(task) {
+    my_trace();
     setBreadCrumbs(task.task_id);
     const container = document.getElementById('taskDetailsContainer');
     container.innerHTML = ''; // Clear previous content
@@ -980,6 +1013,7 @@ function renderTaskForm(task) {
 }
 
 function addField() {
+    my_trace();
     const form = document.getElementById('taskForm');
     const fieldContainer = document.createElement('div');
     fieldContainer.classList.add('field-container');
@@ -997,6 +1031,7 @@ function addField() {
 }
 
 function saveTaskCallback(response) {
+    my_trace();
     const alertDiv = document.getElementById('alertDiv');
     alertDiv.innerHTML = ''; // Clear any existing alerts
 
@@ -1026,6 +1061,7 @@ function saveTaskCallback(response) {
 
 
 function saveTask(taskId) {
+    my_trace();
     const form = document.getElementById('taskForm');
     const formData = new FormData(form);
     const updatedTask = { "task_id": taskId };
@@ -1056,6 +1092,7 @@ function saveTask(taskId) {
 }
 
 function save_yaml(){
+    my_trace();
     var editorContent = editor.getValue();
     var yamlObject = jsyaml.load(editorContent);
     showStatus("Saving Task: "+yamlObject.name, 0)
@@ -1063,6 +1100,7 @@ function save_yaml(){
 }
 
 function save_json(){
+    my_trace();
     // FIXME: Why is this just like save_yaml?
     var editorContent = editor.getValue();
     var yamlObject = jsyaml.load(editorContent);
@@ -1071,6 +1109,7 @@ function save_json(){
 }
 
 function editor_save(){
+    my_trace();
     console.log("editor_save")
     let editorContent = editor.getValue();
     let task = {}
@@ -1141,7 +1180,9 @@ function editor_save(){
     update_task(remaining_task, editor_save_callback)
 }
 
-function editor_save_callback(response){
+function editor_save_callback(response) {
+    my_trace();
+    console.log('editor_save_callback called from', arguments.callee.caller.name);
     const alertDiv = document.getElementById('aceEditorAlert')
     alertDiv.classList = 'alert alert-success';
     alertDiv.innerHTML = response.message;
@@ -1153,6 +1194,7 @@ function editor_save_callback(response){
 }
 
 function updateTasksFromTemplates(callback) {
+    my_trace();
     const today = new Date();
     today.setHours(0, 0, 0, 0)
     // temp short cuircuit until I fix the current templates:
