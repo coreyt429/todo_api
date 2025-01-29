@@ -1186,9 +1186,10 @@ function editor_save_callback(response) {
     alertDiv.classList = 'alert alert-success';
     alertDiv.innerHTML = response.message;
     current_category = category;
+    const savedFilteredTasks = [...filteredTasks];
     update_counters(false);
     category = current_category;
-    filteredTasks = filterTasks(category, false);
+    filteredTasks = [...savedFilteredTasks];
     // renderTasks(filteredTasks);
 }
 
