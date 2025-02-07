@@ -615,66 +615,66 @@ def post_task_deprecated(task_id):
     Create a new task (deprecated)
     ---
     tags:
-        - Tasks
+      - Tasks
     parameters:
-        - in: path
-            name: task_id
-            type: string
-            required: true
-            description: The ID of the task to create
-        - in: body
-            name: body
-            description: The task to create
-            required: true
-            schema:
-                type: object
-                properties:
-                    parent:
-                        type: string
-                        example: "parent_task_id"
-                    status:
-                        type: string
-                        example: "not_started"
-                    timestamps:
-                        type: object
-                        properties:
-                            created:
-                                type: string
-                                example: "2023-01-01T00:00:00Z"
-                            completed:
-                                type: string
-                                example: "2023-01-02T00:00:00Z"
-                    type:
-                        type: string
-                        example: "task"
+      - in: path
+        name: task_id
+        type: string
+        required: true
+        description: The ID of the task to create
+      - in: body
+        name: body
+        description: The task to create
+        required: true
+        schema:
+          type: object
+          properties:
+            parent:
+              type: string
+              example: "parent_task_id"
+            status:
+              type: string
+              example: "not_started"
+            timestamps:
+              type: object
+              properties:
+                created:
+                  type: string
+                  example: "2023-01-01T00:00:00Z"
+                completed:
+                  type: string
+                  example: "2023-01-02T00:00:00Z"
+            type:
+              type: string
+              example: "task"
     responses:
-        201:
-            description: Task created successfully
-            schema:
-                type: object
-                properties:
-                    message:
-                        type: string
-                        example: "task created successfully"
-                    task_id:
-                        type: string
-                        example: "123e4567-e89b-12d3-a456-426614174000"
-        400:
-            description: Invalid input
-            schema:
-                type: object
-                properties:
-                    message:
-                        type: string
-                        example: "Invalid input"
-        503:
-            description: Failed to create task
-            schema:
-                type: object
-                properties:
-                    message:
-                        type: string
-                        example: "Failed to create task"
+      201:
+        description: Task created successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "task created successfully"
+            task_id:
+              type: string
+              example: "123e4567-e89b-12d3-a456-426614174000"
+      400:
+        description: Invalid input
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Invalid input"
+      503:
+        description: Failed to create task
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Failed to create task"
     """
     logger.debug(f"{request.method} /task/{task_id}")
     query = Query()
