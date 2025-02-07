@@ -4,7 +4,11 @@ todo_api flask app to handle server side api
 """
 from flask import Flask, request, jsonify, g, render_template
 from flask_cors import CORS
-import fcntl
+import sys
+if sys.platform == "win32":
+    import msvcrt as fcntl
+else:
+    import fcntl
 from functools import wraps
 import uuid
 from tinydb import TinyDB, Query
@@ -19,9 +23,6 @@ import threading
 import logging
 from contextlib import contextmanager
 from flasgger import Swagger
-
-# Initialize Swagger
-swagger = Swagger(app)
 
 # Configure logging
 logging.basicConfig(
@@ -112,6 +113,9 @@ CORS(app, origins='*',
           methods=['GET', 'POST', 'PUT', 'DELETE'],
           allow_headers=['Content-Type', 'Authorization'],
           supports_credentials=True)
+# Initialize Swagger
+swagger = Swagger(app)
+
 # FIXME: move all task handling code into a module to simplify the code here to just api code
 # FIXME: move all actual db file handling to a storage layer under tasks
 @contextmanager
