@@ -818,7 +818,7 @@ def delete_task(task_id):
     parameters:
       - name: task_id
         in: path
-        type: integer
+        type: string
         required: true
         description: The ID of the task to delete.
     responses:
