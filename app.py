@@ -522,6 +522,8 @@ def put_task(task_id):
     """
     Update an existing task or create a new one if task_id is not provided.
     ---
+    tags:
+      - Tasks
     put:
       summary: Update an existing task
       description: Update an existing task by task_id or create a new one if task_id is not provided.
