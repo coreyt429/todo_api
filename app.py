@@ -114,7 +114,27 @@ CORS(app, origins='*',
           allow_headers=['Content-Type', 'Authorization'],
           supports_credentials=True)
 # Initialize Swagger
-swagger = Swagger(app)
+swagger = Swagger(app, template={
+    "swagger": "2.0",
+    "info": {
+        "title": "Todo API",
+        "description": "API documentation for the Todo API",
+        "version": "1.0.0"
+    },
+    "securityDefinitions": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+        }
+    },
+    "security": [
+        {
+            "Bearer": []
+        }
+    ]
+})
 
 # FIXME: move all task handling code into a module to simplify the code here to just api code
 # FIXME: move all actual db file handling to a storage layer under tasks
@@ -225,28 +245,160 @@ def post_key():
 ####################################################################################################
 #  /task
 ####################################################################################################
-@app.route('/task/search/<string:query>', methods=['GET'])
-@app.route('/task/search/<string:field>/<string:query>', methods=['GET'])
 @app.route('/task/search', methods=['GET'])
 @token_required
-def get_task_search(query=None, field=None):
+def get_task_search_all():
+    """
+    Get all tasks
+    ---
+    tags:
+      - Tasks
+    responses:
+      200:
+        description: A list of tasks
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              task_id:
+                type: string
+                example: "123e4567-e89b-12d3-a456-426614174000"
+              parent:
+                type: string
+                example: "parent_task_id"
+              status:
+                type: string
+                example: "not_started"
+              timestamps:
+                type: object
+                properties:
+                  created:
+                    type: string
+                    example: "2023-01-01T00:00:00Z"
+                  completed:
+                    type: string
+                    example: "2023-01-02T00:00:00Z"
+              type:
+                type: string
+                example: "task"
+    """
     with get_db() as db:
-        if query:
-            query = query.lower()
-            results = []
-            if field:
-                for item in db.all():
-                    if query in item[field].lower():
-                        results.append(item)
-            else:
-                for item in db.all():
-                    if any(query in str(key).lower() or query in str(value).lower()
-                        for key, value in item.items()):
-                        results.append(item)
-        else:
             # Get all tasks
             results = db.all()
     return jsonify(results)
+
+@app.route('/task/search/<string:query>', methods=['GET'])
+@token_required
+def get_task_search(query):
+    """
+    Search tasks by query
+    ---
+    tags:
+      - Tasks
+    parameters:
+      - in: path
+        name: query
+        type: string
+        required: true
+        description: The search query
+    responses:
+      200:
+        description: A list of tasks matching the query
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              task_id:
+                type: string
+                example: "123e4567-e89b-12d3-a456-426614174000"
+              parent:
+                type: string
+                example: "parent_task_id"
+              status:
+                type: string
+                example: "not_started"
+              timestamps:
+                type: object
+                properties:
+                  created:
+                    type: string
+                    example: "2023-01-01T00:00:00Z"
+                  completed:
+                    type: string
+                    example: "2023-01-02T00:00:00Z"
+              type:
+                type: string
+                example: "task"
+    """
+    with get_db() as db:
+        query = query.lower()
+        results = []
+        for item in db.all():
+            for key, value in item.items():
+                if query in str(key).lower() or query in str(value).lower():
+                    results.append(item)
+                    break
+    return jsonify(results)
+
+@app.route('/task/search/<string:field>/<string:query>', methods=['GET'])
+@token_required
+def get_task_search_field(query, field):
+    """
+    Search tasks by field and query
+    ---
+    tags:
+      - Tasks
+    parameters:
+      - in: path
+        name: field
+        type: string
+        required: true
+        description: The field to search in
+      - in: path
+        name: query
+        type: string
+        required: true
+        description: The search query
+    responses:
+      200:
+        description: A list of tasks matching the field and query
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              task_id:
+                type: string
+                example: "123e4567-e89b-12d3-a456-426614174000"
+              parent:
+                type: string
+                example: "parent_task_id"
+              status:
+                type: string
+                example: "not_started"
+              timestamps:
+                type: object
+                properties:
+                  created:
+                    type: string
+                    example: "2023-01-01T00:00:00Z"
+                  completed:
+                    type: string
+                    example: "2023-01-02T00:00:00Z"
+              type:
+                type: string
+                example: "task"
+    """
+    with get_db() as db:
+        query = query.lower()
+        results = []
+        for item in db.all():
+            if query in item[field].lower():
+                results.append(item)
+    return jsonify(results)
+
 
 def apply_task_defaults(task):
     # Ensure the task is a dictionary
