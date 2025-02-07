@@ -395,7 +395,7 @@ def get_task_search_field(query, field):
         query = query.lower()
         results = []
         for item in db.all():
-            if query in item[field].lower():
+            if query in item.get(field, '').lower():
                 results.append(item)
     return jsonify(results)
 
