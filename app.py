@@ -611,6 +611,75 @@ def handle_template(template_id=None):
 @app.route('/backup', methods=['GET'])
 @token_required
 def handle_backup():
+    """
+    Get a backup of all tasks and templates
+    ---
+    tags:
+      - Backup
+    responses:
+      200:
+        description: A backup of all tasks and templates
+        schema:
+          type: object
+          properties:
+            templates:
+              type: array
+              items:
+                type: object
+                properties:
+                  template_id:
+                    type: string
+                    example: "123e4567-e89b-12d3-a456-426614174000"
+                  criteria:
+                    type: object
+                    properties:
+                      period:
+                        type: string
+                        example: "daily"
+                      days:
+                        type: array
+                        items:
+                          type: integer
+                          example: 1
+                      time:
+                        type: string
+                        example: "17:00"
+                  timestamps:
+                    type: object
+                    properties:
+                      created:
+                        type: string
+                        example: "2023-01-01T00:00:00Z"
+                      updated:
+                        type: string
+                        example: "2023-01-02T00:00:00Z"
+            tasks:
+              type: array
+              items:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                    example: "123e4567-e89b-12d3-a456-426614174000"
+                  parent:
+                    type: string
+                    example: "parent_task_id"
+                  status:
+                    type: string
+                    example: "not_started"
+                  timestamps:
+                    type: object
+                    properties:
+                      created:
+                        type: string
+                        example: "2023-01-01T00:00:00Z"
+                      completed:
+                        type: string
+                        example: "2023-01-02T00:00:00Z"
+                  type:
+                    type: string
+                    example: "task"
+    """
     backup = {}
     with get_db(db='template') as db:
         # Get all templates if no template_id is provided
