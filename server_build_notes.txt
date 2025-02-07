@@ -1,0 +1,50 @@
+packages_to_install:
+    - dnf install pip
+    - dnf groupinstall Development Tools -y
+    - dnf install openssl-devel bzip2-devel libffi-devel -y
+    - dnf install nginx -y
+    - dnf install epel-release
+    - dnf install snapd
+    - dnf install supervisor -y
+    - dnf install net-tools
+supervisord:
+    program: myapi
+    config:
+        directory: /home/coreyt/dev/
+        command: /home/coreyt/.local/bin/gunicorn -w 4 -b 127.0.0.1:8000 app:app
+        user: coreyt
+        autostart: true
+        autorestart: true
+        stopasgroup: true
+        killasgroup: true
+nginx:
+    todo.coreyt.com.conf: |
+        server {
+            server_name todo.coreyt.com;
+
+            listen [::]:443 ssl ipv6only=on; # managed by Certbot
+            listen 443 ssl; # managed by Certbot
+            ssl_certificate /etc/letsencrypt/live/todo.coreyt.com/fullchain.pem; # managed by Certbot
+            ssl_certificate_key /etc/letsencrypt/live/todo.coreyt.com/privkey.pem; # managed by Certbot
+            include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+            ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+            location / {
+                proxy_pass http://127.0.0.1:8000;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+        }
+        server {
+            if ($host = todo.coreyt.com) {
+                return 301 https://$host$request_uri;
+            } # managed by Certbot
+
+            listen 80;
+            listen [::]:80;
+
+            server_name todo.coreyt.com;
+            return 404; # managed by Certbot
+        }

@@ -17,8 +17,6 @@ import shutil
 import os
 import threading
 import logging
-import time
-import random
 from contextlib import contextmanager
 
 
