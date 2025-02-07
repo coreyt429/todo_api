@@ -46,7 +46,8 @@ class Task:
         if 'created' not in task['timestamps']:
             task['timestamps']['created'] = self.get_current_iso_timestamp()
         if 'due' not in task['timestamps']:
-            task['timestamps']['due'] = self.get_gmt_iso_for_local_5pm()           
+            task['timestamps']['due'] = self.get_gmt_iso_for_local_5pm()
+        
         return task
     
     def get_gmt_iso_for_local_5pm(self):
