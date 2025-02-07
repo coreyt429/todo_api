@@ -2,4 +2,5 @@ Flask
 flask-cors
 tinydb
 gunicorn
-cryptography  
+cryptography
+flasgger  

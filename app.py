@@ -18,7 +18,10 @@ import os
 import threading
 import logging
 from contextlib import contextmanager
+from flasgger import Swagger
 
+# Initialize Swagger
+swagger = Swagger(app)
 
 # Configure logging
 logging.basicConfig(
@@ -162,7 +165,44 @@ def index():
 ####################################################################################################
 
 @app.route('/key', methods=['POST'])
-def get_key():
+def post_key():
+    """
+    Create a new API key
+    ---
+    tags:
+      - Key Management
+    parameters:
+      - in: body
+        name: body
+        description: User ID and shared secret
+        required: true
+        schema:
+          type: object
+          properties:
+            user_id:
+              type: string
+              example: "user123"
+            shared_secret:
+              type: string
+              example: "mysecret"
+    responses:
+      200:
+        description: API key created successfully
+        schema:
+          type: object
+          properties:
+            api_key:
+              type: string
+              example: "base64encodedapikey"
+      400:
+        description: Missing user_id or shared_secret
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Missing user_id or shared_secret"
+    """
     data = request.get_json()
     user_id = data.get('user_id')
     shared_secret = data.get('shared_secret')
