@@ -5,24 +5,16 @@ todo_api flask app to handle server side api
 from flask import Flask, request, jsonify, g, render_template
 from flask_cors import CORS
 import sys
-if sys.platform == "win32":
-    import msvcrt as fcntl
-else:
-    import fcntl
 from functools import wraps
 import uuid
-from tinydb import TinyDB, Query
-from tinydb.storages import JSONStorage
-from cryptography.fernet import Fernet
+from tinydb import Query
 import json
 import base64
-from datetime import datetime, timezone, date
-import shutil
-import os
 import threading
 import logging
-from contextlib import contextmanager
 from flasgger import Swagger
+from todo_storage import get_db
+from todo_util import get_current_iso_timestamp, generate_key
 
 # Configure logging
 logging.basicConfig(
@@ -35,43 +27,6 @@ logging.basicConfig(
 
 # Create a logger object
 logger = logging.getLogger(__name__)
-
-@contextmanager
-def file_lock(lock_file):
-    with open(lock_file, 'w') as f:
-        try:
-            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            yield
-        except IOError:
-            logger.warning(f"Waiting for lock on {lock_file}")
-            fcntl.flock(f, fcntl.LOCK_EX)
-            yield
-        finally:
-            fcntl.flock(f, fcntl.LOCK_UN)
-
-def get_current_iso_timestamp():
-    return datetime.now(timezone.utc).isoformat()
-
-class EncryptedJSONStorage(JSONStorage):
-    def __init__(self, path, key):
-        self.path = path
-        super().__init__(path)
-        self.fernet = Fernet(key)
-
-    def read(self):
-        with open(self.path, 'rb') as handle:
-            encrypted_data = handle.read()
-            if encrypted_data:
-                decrypted_data = self.fernet.decrypt(encrypted_data)
-                return json.loads(decrypted_data)
-            else:
-                return None
-
-    def write(self, data):
-        encrypted_data = self.fernet.encrypt(json.dumps(data).encode())
-        with open(self.path, 'wb') as handle:
-            handle.write(encrypted_data)
-
 
 # Load configuration
 with open('cfg.json') as file:
@@ -136,44 +91,6 @@ swagger = Swagger(app, template={
     ]
 })
 
-# FIXME: move all task handling code into a module to simplify the code here to just api code
-# FIXME: move all actual db file handling to a storage layer under tasks
-@contextmanager
-def get_db(**kwargs):
-    thread_info = f"PID: {os.getpid()}, Thread ID: {threading.get_ident()}"
-    logger.debug(f"{thread_info} - Attempting to acquire database")
-
-    # default tasks db
-    file_name = f"encrypted_{g.user_id}.json"
-    # templates db
-    if kwargs.get('db', None) == 'template':
-        file_name = f"encrypted_{g.user_id}_templates.json"
-    # Get today's date in YYYYMMDD format
-    today = date.today().strftime("%Y%m%d")
-
-    # Define the backup file name
-    backup_file_name = f"{file_name}.{today}"
-
-    lock_file = f"{file_name}.lock"
-
-    with file_lock(lock_file):
-        logger.debug("Got lock")
-        # Check if the backup file for today exists
-        if not os.path.exists(backup_file_name):
-            # If the original file exists, create a backup
-            if os.path.exists(file_name):
-                shutil.copy2(file_name, backup_file_name)      
-        db = TinyDB(file_name, storage=lambda p: EncryptedJSONStorage(p, g.key))
-        try:
-            yield db
-        finally:
-            db.close()
-            logger.debug(f"{thread_info} - Database connection closed")
-
-def generate_key():
-    # Generate a new key using Fernet
-    key = Fernet.generate_key()
-    return key.decode()  # Convert the key from bytes to a string
 
 ####################################################################################################
 #  HTML
