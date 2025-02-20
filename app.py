@@ -13,6 +13,8 @@ import base64
 import threading
 import logging
 from flasgger import Swagger
+# FIXME: this needs to be more elegant
+sys.path.insert(0, "/home/coreyt/dev/todo_api")
 from todo_storage import get_db
 from todo_util import get_current_iso_timestamp, generate_key
 
