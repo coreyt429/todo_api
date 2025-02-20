@@ -7,7 +7,7 @@ import os
 import threading
 import logging
 import json
-from datetime import datetime, timezone, date
+from datetime import date
 import shutil
 from contextlib import contextmanager
 from flask import g
@@ -43,10 +43,6 @@ def file_lock(lock_file):
             yield
         finally:
             fcntl.flock(file, fcntl.LOCK_UN)
-
-def get_current_iso_timestamp():
-    """Function to get the current time in ISO format"""
-    return datetime.now(timezone.utc).isoformat()
 
 class EncryptedJSONStorage(JSONStorage):
     """Class to store data in encrypted JSON format"""
