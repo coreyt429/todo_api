@@ -462,8 +462,19 @@ function renderTasks(tasks) {
     const taskListContainer = document.getElementById('taskListContainer');
     taskListContainer.innerHTML = ''; // Clear existing tasks
 
+    // Determine common parent
+    let commonParent = null;
+    if (tasks.length > 0) {
+        commonParent = tasks[0].parent;
+        for (let i = 1; i < tasks.length; i++) {
+            if (tasks[i].parent !== commonParent) {
+                commonParent = null;
+                break;
+            }
+        }
+    }
     // Load BreadCrumbs
-    setBreadCrumbs(category);
+    setBreadCrumbs(commonParent || category);
     // Clear detail form
     const taskDetailsContainer = document.getElementById('taskDetailsContainer');
     taskDetailsContainer.innerHTML = ''; // Clear previous content
