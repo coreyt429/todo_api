@@ -535,6 +535,8 @@ function filterTasks(category, render = true) {
     } else if (category === 'Templates') {
         filteredTasks = template_list;
     } else{
+        // category is a task_id, so lets set the task_id pointer
+        task_id = category
         filteredTasks = task_list.filter(task => {
             return task.parent === category;
         });
