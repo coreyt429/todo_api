@@ -617,7 +617,7 @@ function setBreadCrumbs(hint) {
         const breadcrumbItemAdd = document.createElement('li');
         breadcrumbItemAdd.className = 'breadcrumb-item';
         breadcrumbItemAdd.textContent = '+';
-        breadcrumbItemAdd.addEventListener('click', () => newTask());
+        breadcrumbItemAdd.addEventListener('click', () => newTask(task_id));
         breadcrumbContainer.appendChild(breadcrumbItemAdd);      
     }else {
         // Assume hint is a task_id and create breadcrumb chain
