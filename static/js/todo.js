@@ -38,11 +38,24 @@ const statusBar = document.getElementById('statusBar');
 const statusMessage = document.getElementById('statusMessage');
 const statusProgress = document.getElementById('statusProgress');
 
-function my_trace(){
-    stack = new Error().stack.split("\n");
-    func = stack[2].split(" ")[5];
-    caller = stack[3].split(" ")[5];
-    caller_line = "https:" + stack[3].split(":")[1] + ":" + stack[3].split(":")[2];
+function my_trace() {
+    const stack = new Error().stack.split("\n");
+    console.log("Stack trace:");
+    console.log(stack);
+
+    let func, caller, caller_line;
+    if (stack.length >= 4) {
+        func = stack[2].split(" ")[5];
+        caller = stack[3].split(" ")[5];
+        caller_line = "https:" + stack[3].split(":")[1] + ":" + stack[3].split(":")[2];
+    } else if (stack.length >= 3) { // safari
+        func = stack[1].split(" ")[5];
+        caller = stack[2].split(" ")[5];
+        caller_line = "https:" + stack[2].split(":")[1] + ":" + stack[2].split(":")[2];
+    } else {
+        func = caller = caller_line = "N/A";
+    }
+
     console.log("Function: " + func + " called by: " + caller + " at line: " + caller_line);
 }
 
