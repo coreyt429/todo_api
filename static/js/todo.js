@@ -34,9 +34,9 @@ editor_theme = 'ace/theme/github_dark';
 checkStoredAuthToken()
 
 // Add JavaScript for managing the status bar
-const statusBar = document.getElementById('statusBar');
-const statusMessage = document.getElementById('statusMessage');
-const statusProgress = document.getElementById('statusProgress');
+const todoStatusBar = document.getElementById('todoStatusBar');
+const todoStatusMessage = document.getElementById('todoStatusMessage');
+const todoStatusProgress = document.getElementById('todoStatusProgress');
 
 function my_trace() {
     const stack = new Error().stack.split("\n");
@@ -61,23 +61,23 @@ function my_trace() {
 
 function showStatus(message, progress = -1) {
     my_trace();
-    statusBar.style.display = 'block';
-    statusMessage.textContent = message;
+    todoStatusBar.style.display = 'block';
+    todoStatusMessage.textContent = message;
     if (progress >= 0 && progress <= 100) {
-        statusProgress.style.width = `${progress}%`;
-        statusProgress.setAttribute('aria-valuenow', progress);
+        todoStatusProgress.style.width = `${progress}%`;
+        todoStatusProgress.setAttribute('aria-valuenow', progress);
     } else {
-        statusProgress.style.width = '100%';
-        statusProgress.classList.add('progress-bar-striped', 'progress-bar-animated');
+        todoStatusProgress.style.width = '100%';
+        todoStatusProgress.classList.add('progress-bar-striped', 'progress-bar-animated');
     }
 }
 
 function hideStatus() {
     my_trace();
-    statusBar.style.display = 'none';
-    statusProgress.style.width = '0%';
-    statusProgress.setAttribute('aria-valuenow', 0);
-    statusProgress.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    todoStatusBar.style.display = 'none';
+    todoStatusProgress.style.width = '0%';
+    todoStatusProgress.setAttribute('aria-valuenow', 0);
+    todoStatusProgress.classList.remove('progress-bar-striped', 'progress-bar-animated');
 }
 
 function toggleShowCompleted() {
