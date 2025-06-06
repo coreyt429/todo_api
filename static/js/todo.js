@@ -301,6 +301,18 @@ function do_review(task_id = null, action = null) {
 
                 update_task(task);
                 index += 1;
+            } else if (['Completed', 'Skipped'].includes(action)) {
+                // Status-based actions
+                if (!task.status || task.status === 'not_started') {
+                    task.status = action.toLowerCase();
+                } else if (task.status === 'in_progress') {
+                    task.status = action.toLowerCase();
+                } else {
+                    console.log(`Task already ${task.status}, cannot mark as ${action}`);
+                    return;
+                }
+                update_task(task);
+                index += 1;
             } else {
                 // Handle unrecognized actions
                 console.log(`Unrecognized action: ${action}`);
@@ -350,7 +362,7 @@ function do_review(task_id = null, action = null) {
     buttonContainer.classList.add('btn-toolbar', 'mt-3');
 
     // Button labels
-    const buttonLabels = ['Next', 'Edit', 'Today', 'Tomorrow', 'Next Week', 'Next Month'];
+    const buttonLabels = ['Next', 'Edit', 'Completed', 'Skipped','Today', 'Tomorrow', 'Next Week', 'Next Month'];
 
     // Create and append buttons
     buttonLabels.forEach(label => {
