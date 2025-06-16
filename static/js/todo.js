@@ -1235,9 +1235,7 @@ function updateTasksFromTemplates(callback) {
     my_trace();
     const today = new Date();
     today.setHours(0, 0, 0, 0)
-    // temp short cuircuit until I fix the current templates:
     first_load = false
-    //callback()
     template_list.forEach(template => {
         console.log("Considering Template: "+template.name)
         // daily and today's DoW is in days
