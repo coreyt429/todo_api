@@ -257,7 +257,7 @@ def get_menu():
         {
         "title": "Tools",
         "caption": "",
-        "icon": "wrench",
+        "icon": "build",
         "link": "",
         "children": [
           {
