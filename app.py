@@ -254,6 +254,26 @@ def get_menu():
                 example: "/tasks"
     """
     menu = [
+        {
+        "title": "Tools",
+        "caption": "",
+        "icon": "wrench",
+        "link": "",
+        "children": [
+          {
+            "title": "Locate",
+            "caption": "",
+            "icon": "",
+            "link": "/#/locate",
+          },
+          {
+            "title": "Tagtool",
+            "caption": "",
+            "icon": "",
+            "link": "/#/tagtool",
+          },
+        ],
+      },
       {
         "title": "Documentation",
         "caption": "",
