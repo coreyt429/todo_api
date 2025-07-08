@@ -225,5 +225,104 @@ def handle_backup():
     return jsonify(backup)
 
 
+@app.route('/menu', methods=['GET'])
+def get_menu():
+    """
+    Get the menu structure
+    ---
+    tags:
+      - Menu
+    responses:
+      200:
+        description: A list of menu items
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                example: "Tasks"
+              caption:
+                type: string
+                example: "Manage your tasks"
+              icon:
+                type: string
+                example: "task"
+              link:
+                type: string
+                example: "/tasks"
+    """
+    menu = [
+      {
+        "title": "Documentation",
+        "caption": "",
+        "icon": "school",
+        "link": "",
+        "children": [
+          {
+            "title": "Code",
+            "caption": "",
+            "icon": "",
+            "link": "",
+            "children": [
+              {
+                "title": "Quasar Framework",
+                "caption": "quasar.dev",
+                "icon": "school",
+                "link": "https://quasar.dev",
+                "parent": "Docs",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        "title": "Github",
+        "caption": "github.com/quasarframework",
+        "icon": "code",
+        "link": "https://github.com/quasarframework",
+      },
+      {
+        "title": "Social Media",
+        "caption": "",
+        "icon": "share",
+        "link": "",
+        "children": [
+          {
+            "title": "Discord Chat Channel",
+            "caption": "chat.quasar.dev",
+            "icon": "chat",
+            "link": "https://chat.quasar.dev",
+          },
+          {
+            "title": "Forum",
+            "caption": "forum.quasar.dev",
+            "icon": "record_voice_over",
+            "link": "https://forum.quasar.dev",
+          },
+          {
+            "title": "Twitter",
+            "caption": "@quasarframework",
+            "icon": "rss_feed",
+            "link": "https://twitter.quasar.dev",
+          },
+          {
+            "title": "Facebook",
+            "caption": "@QuasarFramework",
+            "icon": "public",
+            "link": "https://facebook.quasar.dev",
+          },
+          {
+            "title": "Quasar Awesome",
+            "caption": "Community Quasar projects",
+            "icon": "favorite",
+            "link": "https://awesome.quasar.dev",
+          },
+        ],
+      },
+    ]
+    return jsonify(menu)
+
 if __name__ == '__main__':
     app.run(debug=True)
