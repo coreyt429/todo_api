@@ -119,7 +119,7 @@ def get_task_search(query):
         for item in db.all():
             for key, value in item.items():
                 if query in str(key).lower() or query in str(value).lower():
-                    results.task_append(item)
+                    results.append(item)
                     break
     return jsonify(results)
 
@@ -177,7 +177,7 @@ def get_task_search_field(query, field):
         results = []
         for item in db.all():
             if query in item.get(field, '').lower():
-                results.task_append(item)
+                results.append(item)
     return jsonify(results)
 
 
