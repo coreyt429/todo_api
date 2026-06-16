@@ -23,6 +23,34 @@ logger = logging.getLogger(__name__)
 
 task_app = blueprints.Blueprint('task_app', __name__)
 
+
+def _comma_separated_values(value):
+    """Parse comma-separated query parameter values."""
+    if not value:
+        return []
+    return [item.strip().lower() for item in value.split(',') if item.strip()]
+
+
+def _filter_tasks(tasks, args):
+    """Apply optional query string filters to a task list."""
+    context = args.get('context')
+    excluded_statuses = set(_comma_separated_values(args.get('exclude_status')))
+
+    if context:
+        context = context.strip().lower()
+        tasks = [
+            task for task in tasks
+            if str(task.get('context', '')).lower() == context
+        ]
+
+    if excluded_statuses:
+        tasks = [
+            task for task in tasks
+            if str(task.get('status', '')).lower() not in excluded_statuses
+        ]
+
+    return tasks
+
 ####################################################################################################
 #  /task
 ####################################################################################################
@@ -520,9 +548,21 @@ def get_task_list():
     ---
     tags:
       - Tasks
+    parameters:
+      - in: query
+        name: context
+        type: string
+        required: false
+        description: Optional task context to match exactly, case-insensitive.
+      - in: query
+        name: exclude_status
+        type: string
+        required: false
+        description: Optional comma-separated task statuses to exclude, case-insensitive.
+        example: completed,skipped,cancelled
     responses:
       200:
-        description: A list of tasks
+        description: A filtered or unfiltered list of tasks
         schema:
           type: array
           items:
@@ -554,6 +594,7 @@ def get_task_list():
     with get_db(db='task') as db:
         # Get all tasks if no task_id is provided
         tasks = db.all()
+    tasks = _filter_tasks(tasks, request.args)
     return jsonify(tasks)
         
 @task_app.route('/<string:task_id>', methods=['DELETE'])

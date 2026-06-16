@@ -11,6 +11,7 @@ import json
 import base64
 import threading
 import logging
+from datetime import datetime
 from flasgger import Swagger
 # FIXME: this needs to be more elegant
 sys.path.insert(0, "/home/coreyt/dev/todo_api")
@@ -143,6 +144,59 @@ def post_key():
 ####################################################################################################
 #  /backup
 ####################################################################################################
+def _restore_timestamp_value(item):
+    timestamps = item.get('timestamps') or {}
+    candidate = timestamps.get('updated') or timestamps.get('created')
+    if not candidate:
+        return None
+    try:
+        return datetime.fromisoformat(str(candidate).replace('Z', '+00:00'))
+    except ValueError:
+        return None
+
+
+def _restore_collection(collection_name, items, id_field, conflict_resolution):
+    restored = 0
+    skipped = 0
+    query = Query()
+    with get_db(db=collection_name) as db:
+        for item in items:
+            if not isinstance(item, dict):
+                skipped += 1
+                continue
+
+            item_id = item.get(id_field)
+            if not item_id:
+                skipped += 1
+                continue
+
+            existing = db.get(query[id_field] == item_id)
+            if existing is None:
+                db.insert(item)
+                restored += 1
+                continue
+
+            should_replace = conflict_resolution == 'overwrite'
+            if conflict_resolution == 'newest':
+                backup_ts = _restore_timestamp_value(item)
+                existing_ts = _restore_timestamp_value(existing)
+                if backup_ts is None:
+                    should_replace = False
+                elif existing_ts is None:
+                    should_replace = True
+                else:
+                    should_replace = backup_ts >= existing_ts
+
+            if should_replace:
+                db.remove(query[id_field] == item_id)
+                db.insert(item)
+                restored += 1
+            else:
+                skipped += 1
+
+    return restored, skipped
+
+
 @app.route('/backup', methods=['GET'])
 @token_required
 def handle_backup():
@@ -223,6 +277,68 @@ def handle_backup():
         # Get all templates if no template_id is provided
         backup['tasks'] = db.all()
     return jsonify(backup)
+
+
+@app.route('/restore', methods=['POST'])
+@token_required
+def handle_restore():
+    """
+    Restore tasks and templates from a backup payload
+    ---
+    tags:
+      - Backup
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            conflict_resolution:
+              type: string
+              enum: [newest, overwrite]
+              example: overwrite
+            tasks:
+              type: array
+              items:
+                type: object
+            templates:
+              type: array
+              items:
+                type: object
+    responses:
+      200:
+        description: Backup restored successfully
+      400:
+        description: Invalid restore payload
+    """
+    payload = request.get_json(silent=True) or {}
+    conflict_resolution = payload.get('conflict_resolution')
+    if conflict_resolution not in {'newest', 'overwrite'}:
+        return jsonify({'message': 'Invalid conflict_resolution'}), 400
+
+    tasks = payload.get('tasks') or []
+    templates = payload.get('templates') or []
+    if not isinstance(tasks, list):
+        return jsonify({'message': 'tasks must be a list'}), 400
+    if templates and not isinstance(templates, list):
+        return jsonify({'message': 'templates must be a list'}), 400
+
+    tasks_restored, tasks_skipped = _restore_collection('task', tasks, 'task_id', conflict_resolution)
+    templates_restored, templates_skipped = _restore_collection(
+        'template', templates, 'template_id', conflict_resolution
+    )
+
+    return jsonify(
+        {
+            'message': 'restore completed',
+            'conflict_resolution': conflict_resolution,
+            'tasks_restored': tasks_restored,
+            'tasks_skipped': tasks_skipped,
+            'templates_restored': templates_restored,
+            'templates_skipped': templates_skipped,
+        }
+    )
 
 
 @app.route('/menu', methods=['GET'])
